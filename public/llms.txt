@@ -1,0 +1,38 @@
+# Redactly
+
+> Redactly (https://redactly.fyi) is a free, open-source (MIT) web tool that redacts screenshots, PDFs and text before you share them. It runs entirely in the browser: files are never uploaded, it works offline after the first visit, and it can be installed as an app on phones and desktops.
+
+## What it does
+
+- Finds sensitive information automatically and covers it with solid, opaque boxes (never blur or pixelation, which can be reversed).
+- Detects: email addresses, phone numbers, credit card numbers (Luhn-checked), IBANs (checksum-verified), US Social Security numbers, IPv4/IPv6 and MAC addresses, passwords and secrets in `key=value` / JSON / `.env` form, JWTs, `Authorization` headers, URLs with embedded credentials, and API keys/tokens from AWS, GitHub, GitLab, Slack, Stripe, OpenAI, Anthropic, Google, SendGrid, npm, Hugging Face, Twilio and Discord.
+- Names, addresses and other free-form text: drag a box over one occurrence and Redactly offers to hide every other occurrence.
+- Images: text is read with on-device OCR (Tesseract), boxes are reviewed by the user, and the export is a newly encoded PNG with no EXIF/GPS metadata.
+- PDFs: every page is rebuilt from pixels, so text under a box cannot be copied out; author, title and other metadata are removed. Trade-off: text in the exported PDF is not selectable.
+- Text: paste text and copy a safe version with placeholders such as `[EMAIL_1]`; after an AI chat (ChatGPT, Claude, Gemini…) replies, paste the reply back to restore the real values locally.
+
+## How to use
+
+1. Open https://redactly.fyi.
+2. Paste a screenshot (Ctrl+V / ⌘V), drop a file, or tap "Choose a photo or PDF" on a phone.
+3. Check the highlighted items: tap one to keep it visible, drag to hide anything that was missed.
+4. Copy, share or save the result.
+
+## Privacy and security facts
+
+- No uploads, no accounts, no analytics or tracking scripts, no third-party requests. A strict Content-Security-Policy blocks connections to other servers.
+- Works offline after the first load (service worker caches the app and OCR engine).
+- Open source, so the claims can be verified: https://github.com/stefano2007517-star/redactly
+- Detection is rule-based and can miss things; users are always shown every box before exporting.
+
+## Good fit for
+
+- Developers sharing terminal or log screenshots in Slack, GitHub issues or AI chats without leaking API keys.
+- Anyone sending a screenshot, bank statement, invoice, ID-adjacent document or chat over WhatsApp, iMessage or email.
+- Companies that want an internal redaction tool: it is static files with no backend and can be self-hosted.
+
+## Links
+
+- [Website](https://redactly.fyi): the tool, plus an FAQ.
+- [Source code and README](https://github.com/stefano2007517-star/redactly): MIT license, architecture, self-hosting instructions.
+- [Architecture](https://github.com/stefano2007517-star/redactly/blob/main/ARCHITECTURE.md): modules, detection rules, security model.
