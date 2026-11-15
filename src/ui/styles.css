@@ -117,9 +117,48 @@ textarea {
 /* ---- shell ------------------------------------------------------------------------------ */
 
 .shell {
+  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Review screen = app shell (class set on <html> by app.ts while it is mounted): the shell is
+   exactly one viewport tall, the document never scrolls, and only the stage (and the panel when
+   it overflows) scroll. Header and action bar keep their size; the stage takes the rest. */
+html.is-app-shell,
+html.is-app-shell body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+html.is-app-shell body {
+  min-height: 0;
+}
+html.is-app-shell .shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+html.is-app-shell .masthead {
+  flex: none;
+}
+html.is-app-shell .main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* "How it works" stays on the start and text screens; here it would only add a page scroll. */
+html.is-app-shell .foot {
+  display: none;
+}
+/* Landscape phones: every pixel of height goes to the page. */
+@media (max-height: 520px) {
+  html.is-app-shell .masthead {
+    display: none;
+  }
 }
 
 .masthead {
@@ -813,7 +852,7 @@ body.is-dragging .drop-overlay {
   cursor: default;
 }
 
-/* Disclosure panel (findings + Always hide): sheet over the page on small screens,
+/* Disclosure panel (findings list): sheet over the page on small screens,
    sidebar on large ones. Closed by default. */
 .panel {
   position: absolute;
@@ -921,10 +960,89 @@ body.is-dragging .drop-overlay {
   white-space: nowrap;
 }
 
-.terms {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
+.fgroup__stop {
+  margin: 0.1rem 0 0 0.25rem;
+  font-size: 0.85rem;
+}
+
+/* "“Maria Lopez” appears 4 more times. [Hide all] [×]" after drawing a box (review.ts). */
+.everywhere {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.45rem 0.4rem 0.45rem 0.85rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--tone-custom);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 6px 24px rgba(22, 32, 44, 0.22);
+  font-size: 0.92rem;
+  line-height: 1.35;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.everywhere.is-anchored {
+  position: absolute;
+  z-index: 1100; /* above hot/selected regions (1000) */
+  width: max-content;
+  max-width: min(22rem, 100%);
+  pointer-events: auto;
+}
+.everywhere.is-bar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  margin: 0 0 0.75rem;
+}
+.everywhere__text {
+  flex: 1 1 10rem;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.everywhere.is-done {
+  flex-wrap: nowrap;
+}
+.everywhere.is-done .everywhere__text {
+  flex: 0 1 auto;
+}
+.everywhere__text--error {
+  color: var(--danger);
+}
+.everywhere__go {
+  min-height: 36px;
+  padding: 0 0.9rem;
+  font-size: 0.9rem;
+}
+.everywhere__close {
+  width: 32px;
+  height: 32px;
+}
+.everywhere__close:hover {
+  color: var(--ink);
+}
+.everywhere.is-done {
+  border-left-color: var(--ok);
+}
+.everywhere.is-done .everywhere__text {
+  color: var(--ok);
+}
+@media (pointer: coarse) {
+  .everywhere__go {
+    min-height: 44px;
+  }
+  .everywhere__close {
+    width: 44px;
+    height: 44px;
+  }
+}
+.is-final .everywhere {
+  display: none;
 }
 
 /* Action bar: disclosure on the left, one outcome button on the right. */
@@ -1040,11 +1158,13 @@ body.is-dragging .drop-overlay {
   font-weight: 500;
 }
 
+/* Fills what the app shell leaves below the masthead (see html.is-app-shell): no fixed height and
+   no min-height, either of which would make the document taller than the viewport. */
 .review {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--head-h));
-  min-height: 26rem;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .review__body {
   position: relative;
@@ -1056,6 +1176,11 @@ body.is-dragging .drop-overlay {
   flex: 1;
   min-width: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+}
+.review__bar,
+.actions {
+  flex: none;
 }
 
 @media (max-width: 599px) {

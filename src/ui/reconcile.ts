@@ -1,4 +1,4 @@
-// Re-detection (e.g. after "Always hide…" changes) produces brand-new regions. This keeps what the
+// Re-detection (e.g. after "Hide all" adds a custom term) produces brand-new regions. This keeps what the
 // user already decided: manual boxes survive, and a detected region that is still found keeps its
 // id and its on/off state. Pure.
 import type { Region } from '../core/types';

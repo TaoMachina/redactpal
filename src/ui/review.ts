@@ -1,13 +1,15 @@
 // Review screen for images and PDFs. Deliberately small:
 //   one hint line · the page(s) with semi-transparent boxes · one outcome button.
-// Findings list and "Always hide…" live in a collapsed disclosure. Boxes turn solid black at the
-// moment of export (and on "Show final"); the exported file is always solid fill.
+// The findings list lives in a collapsed disclosure. Drawing a box over text that appears elsewhere
+// offers to hide it everywhere (see everywhere.ts). Boxes turn solid black at the moment of export
+// (and on "Show final"); the exported file is always solid fill.
 import type { Rect } from '../core/types';
 import { disposeDoc, metadataEntries, newRegionId, redetect, type ReviewDoc } from './doc';
-import { announce, debounce, errorMessage, h, isCoarsePointer, isEditable } from './dom';
+import { announce, errorMessage, h, isCoarsePointer, isEditable, svg } from './dom';
+import { enableTermRegions, suggestEverywhere, withoutTerm, withTerm, type Suggestion } from './everywhere';
 import { canCopyImage, canShareFiles, copyPng, downloadBlob, shareFile } from './export';
 import { renderFindings } from './findings';
-import { countHidden, doneMessage, groupRegions, parseTerms, plural, redactedFilename, type FindingItem, type PlacedRegion } from './format';
+import { countHidden, doneMessage, groupRegions, plural, redactedFilename, type FindingItem, type PlacedRegion } from './format';
 import { PageView, type PageViewHost } from './pageview';
 
 export interface ReviewHost {
@@ -23,6 +25,9 @@ export interface ReviewController {
 }
 
 type Via = 'copy' | 'download' | 'share';
+
+const CLOSE_ICON =
+  '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController {
   const coarse = isCoarsePointer();
@@ -86,9 +91,12 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
       page.regions.push({ id, rect, kind: 'manual', label: 'Your box', text: '', enabled: true });
       st.selected = id;
       changed();
-      announce(coarse ? 'Box added.' : 'Box added. Press Delete to remove it.');
+      const offer = offerEverywhere(pageIndex, rect, id);
+      const added = coarse ? 'Box added.' : 'Box added. Press Delete to remove it.';
+      announce(offer ? `${added} ${offerText(offer)} Hide all is ${every?.el.classList.contains('is-bar') ? 'above the page' : 'next to the box'}.` : added);
     },
     remove(id) {
+      if (every?.regionId === id) dismissEvery();
       for (const p of doc.pages) p.regions = p.regions.filter((r) => r.id !== id);
       if (st.selected === id) st.selected = null;
       changed();
@@ -143,55 +151,15 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   const pagesEl = h('div', { class: 'pages', 'aria-describedby': 'stage-hint' }, views.map((v) => v.el));
   stage.append(...[hint, notice, pagesEl].filter((x): x is HTMLElement => !!x));
 
-  // ---- disclosure: findings + Always hide --------------------------------------------------
+  // ---- disclosure: findings ----------------------------------------------------------------
 
   const findingsEl = h('div', { class: 'findings' });
-  const termsInput = h('input', {
-    type: 'text',
-    id: 'terms',
-    class: 'input',
-    autocomplete: 'off',
-    spellcheck: 'false',
-    placeholder: 'e.g. Jane Doe, Acme, Project Falcon',
-    'aria-describedby': 'terms-hint terms-error',
-    value: host.terms().join(', '),
-  });
-  const termsError = h('p', { class: 'field__error', id: 'terms-error', role: 'alert' });
-  const applyTerms = () => {
-    const terms = parseTerms(termsInput.value);
-    if (terms.join('\n') === host.terms().join('\n')) return;
-    host.setTerms(terms);
-    try {
-      redetect(doc, { customTerms: terms });
-      termsError.textContent = '';
-      changed();
-      announce(`${plural(hiddenCount(), 'item', 'items')} will be hidden.`);
-    } catch (e) {
-      termsError.textContent = `Couldn’t search for those terms: ${errorMessage(e)}`;
-    }
-  };
-  const applyTermsSoon = debounce(applyTerms, 600);
-  termsInput.addEventListener('input', () => applyTermsSoon());
-  const applyNow = () => {
-    applyTermsSoon.cancel();
-    applyTerms();
-  };
-  termsInput.addEventListener('change', applyNow);
-  termsInput.addEventListener('keydown', (e) => e.key === 'Enter' && applyNow());
 
   const panel = h(
     'div',
     { class: 'panel', id: 'review-panel', role: 'region', 'aria-label': 'What will be hidden', hidden: true },
     h('p', { class: 'panel__tip' }, coarse ? 'Tap a box on the page to keep it visible.' : 'Click a box on the page to keep it visible.'),
     findingsEl,
-    h(
-      'div',
-      { class: 'field terms' },
-      h('label', { for: 'terms', class: 'field__label' }, 'Always hide…'),
-      termsInput,
-      h('p', { class: 'field__hint', id: 'terms-hint' }, 'Names, company, project — separated by commas. Forgotten when you close this tab.'),
-      termsError,
-    ),
   );
 
   // ---- action bar --------------------------------------------------------------------------
@@ -222,6 +190,126 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     h('div', { class: 'review__body' }, stage, panel),
     actions,
   );
+
+  // ---- "hide everywhere" prompt -------------------------------------------------------------
+  // After a box is drawn over text that appears elsewhere: “Maria Lopez” appears 4 more times.
+  // [Hide all] [×]. Next to the box with a mouse on a wide screen; on touch / narrow screens a bar
+  // pinned to the top of the stage (beside a finger-drawn box it is easily covered or missed).
+
+  let every: { el: HTMLElement; regionId: string; timer?: ReturnType<typeof setTimeout> } | null = null;
+
+  const shorten = (s: string) => (s.length > 40 ? `${s.slice(0, 38).trimEnd()}…` : s);
+  const offerText = (s: Suggestion) => `“${shorten(s.phrase)}” appears ${plural(s.count, 'more time', 'more times')}.`;
+
+  function dismissEvery(): void {
+    if (!every) return;
+    if (every.timer) clearTimeout(every.timer);
+    const hadFocus = every.el.contains(document.activeElement);
+    every.el.remove();
+    every = null;
+    if (hadFocus) title.focus({ preventScroll: true });
+  }
+
+  const closeButton = (): HTMLElement =>
+    h('button', { type: 'button', class: 'iconbtn everywhere__close', 'aria-label': 'Dismiss', title: 'Dismiss', onclick: () => dismissEvery() }, svg(CLOSE_ICON));
+
+  function offerEverywhere(pageIndex: number, rect: Rect, regionId: string): Suggestion | null {
+    dismissEvery();
+    let found: Suggestion | null = null;
+    try {
+      found = suggestEverywhere(doc.pages, pageIndex, rect);
+    } catch {
+      found = null; // a convenience: it must never break drawing a box
+    }
+    const view = views.find((v) => v.page.index === pageIndex);
+    if (!found || !view) return null;
+    const offer = found;
+    const el = h(
+      'div',
+      { class: 'everywhere', role: 'group', 'aria-label': 'Hide everywhere' },
+      h('p', { class: 'everywhere__text' }, offerText(offer)),
+      h('button', { type: 'button', class: 'btn btn--primary everywhere__go', onclick: () => hideEverywhere(offer) }, 'Hide all'),
+      closeButton(),
+    );
+    every = { el, regionId };
+    // Anchored only where it fits beside the box: mouse, wide window, page wide enough for it.
+    if (!coarse && matchMedia('(min-width: 600px)').matches && view.el.clientWidth >= 360) {
+      view.attachNear(el, rect);
+      keepInView(el);
+    } else {
+      el.classList.add('is-bar');
+      stage.insertBefore(el, stage.firstChild);
+    }
+    return offer;
+  }
+
+  function hideEverywhere(s: Suggestion): void {
+    if (!every || st.busy) return;
+    const terms = withTerm(host.terms(), s.phrase);
+    try {
+      redetect(doc, { customTerms: terms });
+      enableTermRegions(doc.pages, s.phrase);
+      dropRedundantManual(every.regionId);
+    } catch (e) {
+      every.el.replaceChildren(h('p', { class: 'everywhere__text everywhere__text--error' }, `Couldn’t hide those: ${errorMessage(e)}`), closeButton());
+      return;
+    }
+    host.setTerms(terms);
+    changed();
+    const msg = `Hidden ${s.count} more.`;
+    const close = closeButton();
+    const hadFocus = every.el.contains(document.activeElement);
+    every.el.classList.add('is-done');
+    every.el.replaceChildren(h('p', { class: 'everywhere__text' }, `✓ ${msg}`), close);
+    if (hadFocus) close.focus({ preventScroll: true });
+    every.timer = setTimeout(() => dismissEvery(), 3000);
+    announce(`${msg} Every “${shorten(s.phrase)}” will be hidden. To undo, untick it under See list.`);
+  }
+
+  /** After "Hide all", the hand-drawn box that started it sits on top of a new custom region for the
+   *  same word. Keeping both would count that word twice ("5 hidden" when 4 are visible), so drop the
+   *  manual box when an enabled custom region covers the text under it. Never drops anything else. */
+  function dropRedundantManual(regionId: string): void {
+    for (const page of doc.pages) {
+      const manual = page.regions.find((r) => r.id === regionId && r.kind === 'manual');
+      if (!manual) continue;
+      const m = manual.rect;
+      const covered = page.regions.some((r) => {
+        if (r === manual || !r.enabled || r.kind !== 'custom') return false;
+        const ix = Math.max(0, Math.min(m.x + m.w, r.rect.x + r.rect.w) - Math.max(m.x, r.rect.x));
+        const iy = Math.max(0, Math.min(m.y + m.h, r.rect.y + r.rect.h) - Math.max(m.y, r.rect.y));
+        return ix * iy >= 0.5 * r.rect.w * r.rect.h; // the custom region sits inside the drawn box
+      });
+      if (covered) page.regions = page.regions.filter((r) => r !== manual);
+    }
+  }
+
+  function stopHiding(term: string): void {
+    const terms = withoutTerm(host.terms(), term);
+    try {
+      redetect(doc, { customTerms: terms });
+    } catch (e) {
+      announce(`That didn’t work: ${errorMessage(e)}`);
+      return;
+    }
+    host.setTerms(terms);
+    changed();
+    announce(`“${shorten(term)}” will no longer be hidden everywhere.`);
+  }
+
+  /** Scroll the stage just enough that `el` is fully visible (never the document). */
+  function keepInView(el: HTMLElement): void {
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const s = stage.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const m = 12;
+      if (r.bottom > s.bottom - m) stage.scrollTop += Math.min(r.bottom - s.bottom + m, r.top - s.top - m);
+      else if (r.top < s.top + m) stage.scrollTop -= s.top - r.top + m;
+      if (r.right > s.right - m) stage.scrollLeft += Math.min(r.right - s.right + m, r.left - s.left - m);
+      else if (r.left < s.left + m) stage.scrollLeft -= s.left - r.left + m;
+    });
+  }
 
   // ---- view state --------------------------------------------------------------------------
 
@@ -331,6 +419,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
       reveal: (it) => reveal(it),
       hover: (key) => setHot(key),
       remove: (it) => it.regionIds.forEach((id) => pageHost.remove(id)),
+      stopTerm: (term) => stopHiding(term),
     });
   }
 
@@ -425,7 +514,8 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
         pageHost.remove(st.selected);
       }
     } else if (e.key === 'Escape') {
-      if (st.selected) pageHost.select(null);
+      if (every) dismissEvery();
+      else if (st.selected) pageHost.select(null);
       else if (st.open) setOpen(false);
     }
   };
@@ -438,7 +528,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     focus: () => title.focus({ preventScroll: true }),
     destroy() {
       document.removeEventListener('keydown', onKey);
-      applyTermsSoon.cancel();
+      dismissEvery();
       for (const v of views) v.destroy();
       disposeDoc(doc);
     },

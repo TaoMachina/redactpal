@@ -228,6 +228,25 @@ export class PageView {
     for (const el of this.regionLayer.querySelectorAll<HTMLElement>('.region')) el.classList.toggle('is-hot', el.dataset.item === key);
   }
 
+  /**
+   * Pin `el` (a small prompt) next to `rect` on this page: below it, or above when the box is near
+   * the bottom; left-aligned, or right-aligned when the box is on the right half. It lives outside
+   * the region layer, so refresh() leaves it alone. The caller removes it (el.remove()).
+   */
+  attachNear(el: HTMLElement, rect: Rect): void {
+    const pct = rectToPercent(rect, this.page);
+    const below = pct.top + pct.height <= 72;
+    const right = pct.left + pct.width / 2 > 55;
+    el.classList.add('is-anchored');
+    Object.assign(el.style, {
+      top: below ? `calc(${pct.top + pct.height}% + 8px)` : '',
+      bottom: below ? '' : `calc(${100 - pct.top}% + 26px)`, // clear of the box's chip
+      left: right ? '' : `${pct.left}%`,
+      right: right ? `${100 - pct.left - pct.width}%` : '',
+    });
+    this.surface.append(el);
+  }
+
   scrollToRegion(id: string): void {
     const el = this.regionLayer.querySelector<HTMLElement>(`[data-rid="${CSS.escape(id)}"]`);
     if (!el) return;
@@ -256,7 +275,7 @@ export class PageView {
     s.addEventListener('pointerdown', (e) => {
       const st = this.host.state();
       if (st.preview || e.button !== 0 || this.gesture) return;
-      if ((e.target as Element).closest('.region__del')) return;
+      if ((e.target as Element).closest('.region__del, .everywhere')) return;
       const canDraw = e.pointerType !== 'touch' || st.drawMode;
       this.gesture = {
         pointerId: e.pointerId,
@@ -279,7 +298,10 @@ export class PageView {
     s.addEventListener('pointermove', (e) => {
       const g = this.gesture;
       if (!g) {
-        if (e.pointerType === 'mouse' && !this.host.state().preview) this.updateHover(e);
+        if ((e.target as Element).closest('.everywhere')) {
+          this.surface.classList.remove('is-over-region');
+          this.setHover(null);
+        } else if (e.pointerType === 'mouse' && !this.host.state().preview) this.updateHover(e);
         return;
       }
       if (e.pointerId !== g.pointerId) return;

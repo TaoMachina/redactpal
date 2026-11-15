@@ -25,7 +25,7 @@ const INFO: Record<RegionKind, KindInfo> = {
   password: { short: 'Password', plural: 'Passwords', tone: 'secret' },
   secret_generic: { short: 'Secret', plural: 'Other secrets', tone: 'secret' },
   crypto_address: { short: 'Wallet', plural: 'Crypto addresses', tone: 'money' },
-  custom: { short: 'Always hide', plural: 'Your terms', tone: 'custom' },
+  custom: { short: 'Hidden everywhere', plural: 'Hidden everywhere', tone: 'custom' },
   manual: { short: 'Your box', plural: 'Boxes you drew', tone: 'manual' },
 };
 

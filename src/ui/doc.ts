@@ -1,5 +1,5 @@
 // The review screen works on a ReviewDoc: one or more pages, each with its own regions, whether
-// it came from an image or a PDF. Owns re-detection for "Always hide…" without re-running OCR.
+// it came from an image or a PDF. Owns re-detection for custom terms ("hide everywhere") without re-running OCR.
 import { buildLayout, findingsToRegions } from '../core/layout';
 import type { DetectOptions, Finding, Progress, Region, Token } from '../core/types';
 import { detect } from '../detect';

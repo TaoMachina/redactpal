@@ -65,10 +65,19 @@ export interface FindingItem {
 }
 
 export interface FindingGroup {
+  /** Unique per group: the kind, or `custom:<term>` (each custom term is its own group). */
+  key: string;
   kind: string;
   title: string;
+  /** For custom groups: the term (so the list can offer "Stop hiding … everywhere"). */
+  term?: string;
   items: FindingItem[];
 }
+
+const CUSTOM_PREFIX = 'Custom: ';
+
+/** The term behind a custom finding's label ("Custom: Maria Lopez" → "Maria Lopez"), see detect(). */
+export const customTermOf = (label: string): string => (label.startsWith(CUSTOM_PREFIX) ? label.slice(CUSTOM_PREFIX.length) : label);
 
 export const itemKey = (page: number, r: Pick<Region, 'id' | 'findingId'>): string => `${page}:${r.findingId ?? r.id}`;
 
@@ -94,8 +103,13 @@ export function groupRegions(placed: readonly PlacedRegion[]): FindingGroup[] {
   }
   const groups = new Map<string, FindingGroup>();
   for (const it of items.values()) {
-    let g = groups.get(it.kind);
-    if (!g) groups.set(it.kind, (g = { kind: it.kind, title: kindInfo(it.kind).plural, items: [] }));
+    const term = it.kind === 'custom' ? customTermOf(it.label) : undefined;
+    const key = term !== undefined ? `custom:${term.toLocaleLowerCase()}` : it.kind;
+    let g = groups.get(key);
+    if (!g) {
+      const title = term !== undefined ? `“${term}”` : kindInfo(it.kind).plural;
+      groups.set(key, (g = { key, kind: it.kind, title, term, items: [] }));
+    }
     g.items.push(it);
   }
   const list = [...groups.values()];

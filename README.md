@@ -18,7 +18,7 @@ Text works too: paste text to get a redacted copy, or a *placeholder* version to
 - **No uploads, no tracking, no third-party requests.** All code and the OCR engine are served from the same origin; a strict Content-Security-Policy blocks connections elsewhere.
 - **Solid boxes only.** Blur and pixelation can be reversed; Blot never uses them.
 - **Rebuilt from pixels.** Exported images are re-encoded (no EXIF/GPS). Exported PDFs are rebuilt page-by-page as images, so text under a box cannot be copied out, and metadata (author, title, …) is dropped. Trade-off: text in the exported PDF is not selectable.
-- **Detection can miss things.** It is rule-based (formats, checksums, known key prefixes) — always look before you share. Add names or words you always want hidden under *Always hide*.
+- **Detection can miss things.** It is rule-based (formats, checksums, known key prefixes) — always look before you share. Drag over a name once and Blot offers to hide it everywhere it appears.
 
 ## Self-hosting (companies)
 

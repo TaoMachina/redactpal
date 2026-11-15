@@ -153,7 +153,7 @@ export function createTextMode(host: TextHost, initial = ''): TextController {
     render();
   }
 
-  // ---- select text to hide it (every occurrence, like "Always hide…") -------------------------
+  // ---- select text to hide it (every occurrence, like "Hide all" in the review screen) -------------------------
   function selectedInMirror(): string {
     const sel = document.getSelection();
     if (!sel || sel.isCollapsed || !sel.rangeCount) return '';

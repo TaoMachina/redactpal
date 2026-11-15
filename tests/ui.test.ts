@@ -15,6 +15,7 @@ import { activeFindings, buildHighlightHtml, escapeHtml } from '../src/ui/highli
 import {
   classifyFile,
   countHidden,
+  customTermOf,
   doneMessage,
   groupRegions,
   parseTerms,
@@ -214,6 +215,24 @@ describe('format', () => {
     expect(groups[0].items[0].enabled).toBe(true);
     expect(groups[1].items[0].enabled).toBe(false);
     expect(countHidden(placed)).toBe(3); // email f1 p0, email f1 p1, manual
+  });
+
+  it('gives every custom term its own group (so each can be unticked or stopped)', () => {
+    const custom = (id: string, term: string, findingId: string): Region =>
+      region(id, 0, 0, 1, 1, { kind: 'custom', label: `Custom: ${term}`, text: term, findingId });
+    const placed = [
+      { page: 0, region: custom('a', 'Maria Lopez', 'f0') },
+      { page: 0, region: region('e', 0, 2, 1, 1, { findingId: 'f1' }) },
+      { page: 0, region: custom('b', 'Acme', 'f2') },
+      { page: 1, region: custom('c', 'Maria Lopez', 'f0') },
+    ];
+    const groups = groupRegions(placed);
+    expect(groups.map((g) => g.key)).toEqual(['custom:maria lopez', 'email', 'custom:acme']);
+    expect(groups[0]).toMatchObject({ kind: 'custom', term: 'Maria Lopez', title: '“Maria Lopez”' });
+    expect(groups[0].items.map((i) => i.regionIds)).toEqual([['a'], ['c']]);
+    expect(groups[1].term).toBeUndefined();
+    expect(customTermOf('Custom: Jane')).toBe('Jane');
+    expect(customTermOf('Email address')).toBe('Email address');
   });
 
   it('writes the done message', () => {

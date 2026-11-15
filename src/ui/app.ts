@@ -24,7 +24,7 @@ const MARK =
   '<svg class="brand__mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="3" y="7" width="26" height="4" rx="1.5" fill="currentColor" opacity=".35"/><rect x="3" y="14" width="18" height="6" rx="1" fill="currentColor"/><rect x="3" y="23" width="21" height="4" rx="1.5" fill="currentColor" opacity=".35"/></svg>';
 
 export function startApp(mount: HTMLElement): void {
-  let terms: string[] = []; // "Always hide…" — memory only, never persisted
+  let terms: string[] = []; // custom terms ("hide everywhere", text-mode selections) — memory only, never persisted
   let screen: Screen | null = null;
   let job = 0; // increments to invalidate in-flight analyses (Cancel)
   let running: AbortController | null = null; // aborts the in-flight PDF analysis
@@ -54,6 +54,9 @@ export function startApp(mount: HTMLElement): void {
     screen?.destroy?.();
     screen = next;
     document.body.dataset.screen = next.name;
+    // The review screen is an app shell: it fills the viewport exactly and only its stage/panel
+    // scroll, so the document never shows a second scrollbar. Every other screen scrolls normally.
+    document.documentElement.classList.toggle('is-app-shell', next.name === 'review');
     main.replaceChildren(next.el);
     if (next.name !== 'start' && !history.state?.blot) history.pushState({ blot: true }, '');
     window.scrollTo(0, 0);
@@ -254,7 +257,7 @@ function footer(): HTMLElement {
         'ul',
         { class: 'how__list' },
         point('On your device.', 'Text recognition and detection run in this page. It is blocked from connecting to any other server.'),
-        point('Detection can miss things.', 'It finds patterns like emails, card numbers and API keys, not names — add those under “Always hide…”. Always check before you share.'),
+        point('Detection can miss things.', 'It finds patterns like emails, card numbers and API keys, not names — draw a box over a name and Blot offers to hide it everywhere. Always check before you share.'),
         point('Solid boxes only.', 'Blur and pixelation can be reversed, so Blot never uses them.'),
         point('Rebuilt from pixels.', 'You get a new PNG, or a new PDF of page images: no location data, metadata or hidden text. PDF text won’t be selectable.'),
         point('Nothing is kept.', 'Closing the tab forgets your file and your terms.'),

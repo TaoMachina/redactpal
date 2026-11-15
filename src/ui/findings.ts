@@ -10,6 +10,8 @@ export interface FindingsHandlers {
   reveal(item: FindingItem): void;
   hover(key: string | null): void;
   remove(item: FindingItem): void;
+  /** Stop hiding a custom term everywhere (removes the term, re-detects). */
+  stopTerm?(term: string): void;
 }
 
 const TRASH =
@@ -35,7 +37,7 @@ export function renderFindings(
           // Checked only when ALL are hidden: a partly-hidden group's click then means "hide all",
           // never "reveal all".
           checked: on_ === g.items.length,
-          'aria-label': `Hide all ${g.title.toLowerCase()}`,
+          'aria-label': g.term !== undefined ? `Hide every ${g.title}` : `Hide all ${g.title.toLowerCase()}`,
           'data-role': 'group',
           onchange: (e: Event) => on.setItems(g.items, (e.target as HTMLInputElement).checked),
         });
@@ -43,7 +45,7 @@ export function renderFindings(
 
     return h(
       'section',
-      { class: `fgroup tone-${toneOf(g.kind)}`, 'data-focus': `g:${g.kind}` },
+      { class: `fgroup tone-${toneOf(g.kind)}`, 'data-focus': `g:${g.key}` },
       h(
         'header',
         { class: 'fgroup__head' },
@@ -57,6 +59,13 @@ export function renderFindings(
         { class: 'fgroup__items' },
         g.items.map((it) => renderItem(it, opts, on)),
       ),
+      g.term !== undefined && on.stopTerm
+        ? h(
+            'button',
+            { type: 'button', class: 'linkbtn linkbtn--soft fgroup__stop', 'data-role': 'stop', onclick: () => on.stopTerm?.(g.term as string) },
+            `Stop hiding ${g.title} everywhere`,
+          )
+        : null,
     );
   });
 
@@ -105,7 +114,8 @@ function renderItem(it: FindingItem, opts: { multiPage: boolean; hotKey: string 
         onclick: () => on.reveal(it),
       },
       h('span', { class: 'fitem__value' }, text),
-      manual ? null : h('span', { class: 'fitem__label' }, it.label),
+      // A custom group's title already names the term.
+      manual || it.kind === 'custom' ? null : h('span', { class: 'fitem__label' }, it.label),
     ),
     page,
     manual
