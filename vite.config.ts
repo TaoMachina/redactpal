@@ -27,7 +27,7 @@ function precacheManifest(): Plugin {
       };
       walk(outDir);
       const skip = (f: string) =>
-        f.endsWith('.map') || f === 'sw.js' || f === 'precache.json' || f.includes('/LICENSES/') || f.endsWith('.txt');
+        f.endsWith('.map') || f === 'sw.js' || f === 'precache.json' || f === '_headers' || f.includes('/LICENSES/') || f.endsWith('.txt');
       const core = files.filter((f) => f.startsWith('vendor/tesseract/core/'));
       const always = files.filter((f) => !skip(f) && !core.includes(f));
       writeFileSync(join(outDir, 'precache.json'), JSON.stringify({ always, core }, null, 1));
