@@ -7,7 +7,8 @@
 // (OCR, pdf.js, pdf-lib, detection, the editor) is loaded with import() when it is first needed.
 import { announce, errorMessage, h, svg } from './dom';
 import { classifyFile, unsupportedMessage } from './format';
-import { installGlobalInput, readClipboard } from './input';
+import { singleFlight, TimeoutError } from './guards';
+import { CLIPBOARD_TIMEOUT_MS, installGlobalInput, readClipboard } from './input';
 import { createProcessing } from './processing';
 import { discardShared, isShareLaunch, takeShared, withoutShareParam } from './share';
 import { createStart } from './start';
@@ -29,6 +30,11 @@ export function startApp(mount: HTMLElement): void {
   let screen: Screen | null = null;
   let job = 0; // increments to invalidate in-flight analyses (Cancel)
   let running: AbortController | null = null; // aborts the in-flight PDF analysis
+  // Image analysis can't be aborted once started (decode + OCR run to the end). Cancel → pick
+  // another photo must not run two of them at once on a phone (twice the memory), so a new one
+  // waits for the previous to finish; its result is thrown away.
+  let imageWork: Promise<unknown> = Promise.resolve();
+  let imageBusy = false;
 
   /** Start a new job: invalidates (and aborts) whatever was running. */
   function nextJob(): number {
@@ -42,7 +48,7 @@ export function startApp(mount: HTMLElement): void {
     'div',
     { class: 'shell' },
     h('a', { class: 'skip', href: '#main' }, 'Skip to content'),
-    h('header', { class: 'masthead' }, h('span', { class: 'brand' }, svg(MARK), h('span', { class: 'brand__name' }, 'Blot'))),
+    h('header', { class: 'masthead' }, h('span', { class: 'brand' }, svg(MARK), h('span', { class: 'brand__name' }, 'Redactly'))),
     main,
     footer(),
     h('div', { class: 'drop-overlay', 'aria-hidden': 'true' }, h('p', null, 'Drop to redact. It stays on this device.')),
@@ -158,7 +164,22 @@ export function startApp(mount: HTMLElement): void {
         doc = docFromPdf(await pdf.analyzePdf(file, { ...opts, signal: ac.signal }, onProgress), file.name, pdf.exportRedactedPdf);
       } else {
         const img = await import('../image');
-        doc = docFromImage(await img.analyzeImage(file, opts, onProgress), file.name, img.exportRedactedImage);
+        const previous = imageWork;
+        const mine = (async () => {
+          if (imageBusy) onProgress(0, 'Finishing the previous image…');
+          await previous;
+          if (id !== job) return null; // cancelled while waiting: don't start at all
+          imageBusy = true;
+          try {
+            return await img.analyzeImage(file, opts, onProgress);
+          } finally {
+            imageBusy = false;
+          }
+        })();
+        imageWork = mine.catch(() => undefined);
+        const analysis = await mine;
+        if (!analysis) return;
+        doc = docFromImage(analysis, file.name, img.exportRedactedImage);
       }
       if (id !== job) {
         // Cancelled while working: release what we got.
@@ -192,14 +213,24 @@ export function startApp(mount: HTMLElement): void {
     }
   }
 
+  // One clipboard read at a time (iOS shows one system "Paste" callout per read), and never longer
+  // than CLIPBOARD_TIMEOUT_MS: nothing waits on it, and a late answer is dropped, not acted on.
+  const readOnce = singleFlight(readClipboard, CLIPBOARD_TIMEOUT_MS + 500);
   async function pasteFromButton(): Promise<void> {
+    const from = screen;
     try {
-      const r = await readClipboard();
+      const r = await readOnce();
+      if (!r || screen !== from) return; // a read is already pending, or the user moved on
       if (r.file) return openFile(r.file);
       if (r.text?.trim()) return void goText(r.text);
       announce('The clipboard is empty.');
-    } catch {
-      announce('Your browser didn’t allow reading the clipboard. Choose a file instead.');
+    } catch (e) {
+      if (screen !== from) return;
+      announce(
+        e instanceof TimeoutError
+          ? 'The clipboard didn’t answer. Tap Paste again, or choose a file instead.'
+          : 'Your browser didn’t allow reading the clipboard. Choose a file instead.',
+      );
     }
   }
 
@@ -277,8 +308,8 @@ function footer(): HTMLElement {
         'ul',
         { class: 'how__list' },
         point('On your device.', 'Text recognition and detection run in this page. It is blocked from connecting to any other server.'),
-        point('Detection can miss things.', 'It finds patterns like emails, card numbers and API keys, not names — draw a box over a name and Blot offers to hide it everywhere. Always check before you share.'),
-        point('Solid boxes only.', 'Blur and pixelation can be reversed, so Blot never uses them.'),
+        point('Detection can miss things.', 'It finds patterns like emails, card numbers and API keys, not names — draw a box over a name and Redactly offers to hide it everywhere. Always check before you share.'),
+        point('Solid boxes only.', 'Blur and pixelation can be reversed, so Redactly never uses them.'),
         point('Rebuilt from pixels.', 'You get a new PNG, or a new PDF of page images: no location data, metadata or hidden text. PDF text won’t be selectable.'),
         point('Nothing is kept.', 'Closing the tab forgets your file and your terms.'),
       ),

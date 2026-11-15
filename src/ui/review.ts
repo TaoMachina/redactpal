@@ -9,6 +9,7 @@ import { announce, errorMessage, h, isCoarsePointer, isEditable, svg } from './d
 import { enableTermRegions, snapToWords, suggestEverywhere, withoutTerm, withTerm, type Suggestion } from './everywhere';
 import { canCopyImage, canShareFiles, copyPng, downloadBlob, shareFile } from './export';
 import { renderFindings } from './findings';
+import { withTimeout } from './guards';
 import { countHidden, doneMessage, groupRegions, plural, redactedFilename, type FindingItem, type PlacedRegion } from './format';
 import { PageView, type PageViewHost } from './pageview';
 
@@ -25,6 +26,16 @@ export interface ReviewController {
 }
 
 type Via = 'copy' | 'download' | 'share';
+
+/** Writing the finished PNG to the clipboard is instant when it works; past this it failed. */
+const CLIPBOARD_WRITE_TIMEOUT_MS = 10_000;
+
+const LIST_ICON =
+  '<svg class="disclosure__icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="2.6" cy="4" r="1" fill="currentColor"/><circle cx="2.6" cy="8" r="1" fill="currentColor"/><circle cx="2.6" cy="12" r="1" fill="currentColor"/></svg>';
+const DOWNLOAD_ICON =
+  '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M10 3v9.5M6 8.75l4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHECK_ICON =
+  '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 const CLOSE_ICON =
   '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -55,6 +66,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     done: null as Via | null,
     busy: false,
     open: false,
+    items: 0, // entries in the list (the count on the narrow-screen list button)
   };
 
   // ---- model helpers -----------------------------------------------------------------------
@@ -125,7 +137,11 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   const drawBtn = coarse
     ? h('button', { type: 'button', class: 'btn btn--tool', 'aria-pressed': 'false', onclick: () => setDraw(!st.drawMode), title: 'Then drag over anything you want hidden' }, 'Draw a box')
     : null;
-  const zoomBtn = h('button', { type: 'button', class: 'btn btn--tool', 'aria-pressed': 'false', onclick: () => setZoom(!st.zoomed), title: 'See small text up close' }, 'Enlarge');
+  // Phones and tablets pinch-zoom the page natively (the stage allows pinch-zoom outside Draw mode),
+  // so "Enlarge" is a mouse-and-keyboard tool only.
+  const zoomBtn = coarse
+    ? null
+    : h('button', { type: 'button', class: 'btn btn--tool', 'aria-pressed': 'false', onclick: () => setZoom(!st.zoomed), title: 'See small text up close' }, 'Enlarge');
   const finalBtn = h(
     'button',
     { type: 'button', class: 'btn btn--tool btn--subtle', 'aria-pressed': 'false', title: 'See exactly what will be shared (hold, or click to switch)' },
@@ -161,12 +177,17 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   // ---- disclosure: findings ----------------------------------------------------------------
 
   const findingsEl = h('div', { class: 'findings' });
+  // Narrow screens: the action bar is one row (list · download · primary), so the other ways to
+  // save live at the bottom of the list. Hidden by CSS on wider screens, where the bar has them.
+  const panelSaveLinks = h('div', { class: 'panel__save-links', role: 'group', 'aria-labelledby': 'save-title' });
+  const panelSave = h('div', { class: 'panel__save' }, h('p', { class: 'panel__save-title', id: 'save-title' }, 'More ways to save'), panelSaveLinks);
 
   const panel = h(
     'div',
     { class: 'panel', id: 'review-panel', role: 'region', 'aria-label': 'What will be hidden', hidden: true },
     h('p', { class: 'panel__tip' }, coarse ? 'Tap a box on the page to keep it visible.' : 'Click a box on the page to keep it visible.'),
     findingsEl,
+    panelSave,
   );
 
   // ---- action bar --------------------------------------------------------------------------
@@ -181,12 +202,22 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   const status = h('p', { class: 'actions__status', role: 'status', 'aria-live': 'polite' });
   const primary = h('button', { type: 'button', class: 'btn btn--primary btn--outcome', onclick: () => act(primaryVia) });
   const secondary = h('div', { class: 'actions__more' });
+  // Narrow screens only (CSS): an always-visible Download next to the primary Share/Copy button.
+  // Wider screens show the "Download PNG" link in `secondary` instead.
+  const dlBtn = h('button', {
+    type: 'button',
+    class: 'btn btn--icon actions__dl',
+    'aria-label': 'Download',
+    title: isPdf ? 'Download' : 'Download PNG',
+    hidden: primaryVia === 'download' || undefined,
+    onclick: () => act('download'),
+  });
   const doneEl = h('div', { class: 'done', role: 'status', hidden: true });
   const actions = h(
     'div',
     { class: 'actions' },
     doneEl,
-    h('div', { class: 'actions__row' }, toggle, h('div', { class: 'actions__main' }, secondary, primary)),
+    h('div', { class: 'actions__row' }, toggle, h('div', { class: 'actions__main' }, secondary, dlBtn, primary)),
     status,
   );
 
@@ -274,7 +305,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
       done.el.classList.add('is-leaving');
       done.timer = setTimeout(() => dismissEvery(), 260);
     }, 1400);
-    announce(`${msg} Every “${shorten(s.phrase)}” will be hidden. To undo, untick it under See list.`);
+    announce(`${msg} Every “${shorten(s.phrase)}” will be hidden. To undo, untick it in the list.`);
   }
 
   /** After "Hide all", the hand-drawn box that started it sits on top of a new custom region for the
@@ -335,6 +366,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     if (!silent) announce(v ? 'Showing the result exactly as it will be shared.' : 'Back to editing.');
   }
   function setZoom(v: boolean): void {
+    if (!zoomBtn) return;
     st.zoomed = v;
     root.classList.toggle('is-zoomed', v);
     zoomBtn.setAttribute('aria-pressed', String(v));
@@ -371,16 +403,25 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
       hint.classList.add('hint--warn');
       return;
     }
+    const info = doc.pages.find((p) => p.notice)?.notice;
+    const tail = info ? ` ${info}` : '';
     if (found === 0) {
       const noText = doc.pages.every((p) => p.tokens.length === 0);
-      hint.textContent = `Nothing sensitive found${noText ? ' (no readable text)' : ''}. ${coarse && !st.drawMode ? 'Tap Draw, then drag' : 'Drag'} over anything you want hidden.`;
+      hint.textContent = `Nothing sensitive found${noText ? ' (no readable text)' : ''}. ${coarse && !st.drawMode ? 'Tap Draw, then drag' : 'Drag'} over anything you want hidden.${tail}`;
     } else {
-      hint.textContent = `Found ${plural(found, 'thing', 'things')} to hide. ${keep} · ${add}.`;
+      hint.textContent = `Found ${plural(found, 'thing', 'things')} to hide. ${keep} · ${add}.${tail}`;
     }
   }
 
+  // Wide: "See list ▾". Narrow (CSS): a list icon and the number of entries, e.g. "≡ 6".
   function renderToggle(): void {
-    toggle.replaceChildren('See list', h('span', { class: 'disclosure__caret', 'aria-hidden': 'true' }, st.open ? '▴' : '▾'));
+    toggle.setAttribute('aria-label', `See list, ${plural(st.items, 'item', 'items')}`);
+    toggle.replaceChildren(
+      svg(LIST_ICON),
+      h('span', { class: 'disclosure__label' }, 'See list'),
+      h('span', { class: 'disclosure__count', 'aria-hidden': 'true' }, String(st.items)),
+      h('span', { class: 'disclosure__caret', 'aria-hidden': 'true' }, st.open ? '▴' : '▾'),
+    );
   }
 
   const VERB: Record<Via, string> = { copy: 'Copy', share: 'Share', download: 'Download' };
@@ -393,15 +434,27 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     primary.setAttribute('aria-label', `${VERB[primaryVia]} ${isPdf ? 'redacted PDF' : 'redacted image'}, ${plural(n, 'item', 'items')} hidden`);
     primary.disabled = st.busy;
 
-    const links: HTMLElement[] = [];
-    const link = (via: Via, label: string) =>
-      h('button', { type: 'button', class: 'linkbtn', disabled: st.busy || undefined, onclick: () => act(via) }, st.done === via ? DONE_LABEL[via] : label);
-    if (primaryVia !== 'download') links.push(link('download', isPdf ? 'Download' : 'Download PNG'));
-    if (primaryVia !== 'copy' && canCopy) links.push(link('copy', 'Copy'));
-    if (primaryVia !== 'share' && canShare) links.push(link('share', 'Share…'));
-    const focused = secondary.contains(document.activeElement) ? document.activeElement?.textContent : null;
-    secondary.replaceChildren(...links);
-    if (focused) for (const b of secondary.querySelectorAll('button')) if (b.textContent === focused) b.focus();
+    // The same secondary actions in the bar (wide screens) and at the bottom of the list (narrow).
+    const fillLinks = (container: HTMLElement): number => {
+      const links: HTMLElement[] = [];
+      const link = (via: Via, label: string) =>
+        h('button', { type: 'button', class: 'linkbtn', 'data-via': via, disabled: st.busy || undefined, onclick: () => act(via) }, st.done === via ? DONE_LABEL[via] : label);
+      if (primaryVia !== 'download') links.push(link('download', isPdf ? 'Download' : 'Download PNG'));
+      if (primaryVia !== 'copy' && canCopy) links.push(link('copy', 'Copy'));
+      if (primaryVia !== 'share' && canShare) links.push(link('share', 'Share…'));
+      const active = document.activeElement as HTMLElement | null;
+      const focused = active && container.contains(active) ? active.dataset.via : undefined;
+      container.replaceChildren(...links);
+      if (focused) container.querySelector<HTMLElement>(`[data-via="${focused}"]`)?.focus();
+      return links.length;
+    };
+    fillLinks(secondary);
+    panelSave.hidden = fillLinks(panelSaveLinks) === 0;
+
+    dlBtn.disabled = st.busy;
+    const dlDone = st.done === 'download';
+    dlBtn.replaceChildren(svg(dlDone ? CHECK_ICON : DOWNLOAD_ICON));
+    dlBtn.setAttribute('aria-label', dlDone ? 'Downloaded' : 'Download');
 
     doneEl.hidden = !st.done;
     if (st.done) {
@@ -414,11 +467,13 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   }
 
   function refreshAll(): void {
+    const groups = groupRegions(placed());
+    st.items = groups.reduce((n, g) => n + g.items.length, 0);
     for (const v of views) v.refresh();
     renderHint();
     renderToggle();
     renderActions();
-    renderFindings(findingsEl, groupRegions(placed()), { multiPage: doc.pages.length > 1, hotKey: st.hot }, {
+    renderFindings(findingsEl, groups, { multiPage: doc.pages.length > 1, hotKey: st.hot }, {
       setItems(items, enabled) {
         for (const it of items)
           for (const id of it.regionIds) {
@@ -475,9 +530,19 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     renderActions();
     status.textContent = isPdf ? 'Building your PDF…' : '';
     let ok = false;
+    // The lock is only for while the file is being built. Waiting on the system (share sheet,
+    // clipboard) must never keep the page locked: iOS has left share() pending for good.
+    const unlock = () => {
+      if (!st.busy) return;
+      st.busy = false;
+      root.classList.remove('is-busy');
+      renderActions();
+    };
     try {
       if (via === 'copy') {
-        await copyPng(e.promise);
+        const copying = copyPng(e.promise); // called inside the click (Safari), resolves after the write
+        await e.promise.catch(() => undefined);
+        await withTimeout(copying, CLIPBOARD_WRITE_TIMEOUT_MS);
         ok = true;
       } else if (via === 'download') {
         const blob = await e.promise;
@@ -485,7 +550,9 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
         downloadBlob(blob, filename);
         ok = true;
       } else {
-        const outcome = await shareFile(e.blob ?? (await e.promise), filename);
+        const blob = e.blob ?? (await e.promise);
+        unlock();
+        const outcome = await shareFile(blob, filename);
         if (outcome === 'needs-gesture') status.textContent = 'Ready. Tap Share again to send it.';
         else if (outcome === 'failed') status.textContent = 'Sharing isn’t available here. Use Download instead.';
         else status.textContent = '';
@@ -502,8 +569,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
           ? 'Your browser didn’t allow copying the image. Use Download PNG instead.'
           : `That didn’t work: ${errorMessage(err)}`;
     } finally {
-      st.busy = false;
-      root.classList.remove('is-busy');
+      unlock();
     }
     if (ok && version === st.version) {
       st.done = via;
@@ -525,6 +591,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
         pageHost.remove(st.selected);
       }
     } else if (e.key === 'Escape') {
+      if (views.some((v) => v.cancelDrawing())) return;
       if (every) dismissEvery();
       else if (st.selected) pageHost.select(null);
       else if (st.open) setOpen(false);

@@ -20,6 +20,8 @@ export interface ReviewPage {
   scanned: boolean;
   /** Page could not be fully checked (e.g. OCR failed) — must be shown to the user. */
   warning?: string;
+  /** Informational (e.g. a huge phone photo was shrunk to fit the device). Not a warning. */
+  notice?: string;
   /** Draw the original page (no redactions) into `canvas` at `scale` canvas px per source unit. */
   draw(canvas: HTMLCanvasElement, scale: number): Promise<void>;
 }
@@ -52,6 +54,7 @@ export function docFromImage(a: ImageAnalysis, name: string, exporter: typeof ex
     regions: rekey(a.regions),
     scanned: true,
     warning: a.warning,
+    notice: a.notice,
     async draw(canvas, scale) {
       canvas.width = Math.max(1, Math.round(a.width * scale));
       canvas.height = Math.max(1, Math.round(a.height * scale));

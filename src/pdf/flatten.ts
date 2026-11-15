@@ -11,10 +11,10 @@ import {
 } from 'pdf-lib';
 import { pngUpRows } from './encode';
 
-/** Fresh document with minimal metadata: only /Producer (Blot). No Creator, Title, Author or dates. */
+/** Fresh document with minimal metadata: only /Producer (Redactly). No Creator, Title, Author or dates. */
 export async function createOutputDoc(): Promise<PDFDocument> {
   const doc = await PDFDocument.create({ updateMetadata: false });
-  doc.setProducer('Blot');
+  doc.setProducer('Redactly');
   return doc;
 }
 

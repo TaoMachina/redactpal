@@ -244,13 +244,11 @@ export function createTextMode(host: TextHost, initial = ''): TextController {
       h('div', { class: 'review__tools' }, hideSel, previewBtn),
     ),
     h('div', { class: 'text__body' }, hint, box, errorLine),
-    h(
-      'div',
-      { class: 'text__actions' },
-      h('div', { class: 'text__actions-row' }, done, copyBtn),
-      restore,
-      h('p', { class: 'field__hint' }, 'Stays on your device. Nothing is sent anywhere. ', h('button', { type: 'button', class: 'linkbtn', onclick: () => setText(SAMPLE_TEXT) }, 'Try sample text')),
-    ),
+    // Only the one row sticks to the bottom; the rest scrolls, so on a phone the pinned area is
+    // never taller than one button (the "put your details back" box can be tall when open).
+    h('div', { class: 'text__actions' }, h('div', { class: 'text__actions-row' }, done, copyBtn)),
+    restore,
+    h('p', { class: 'field__hint text__note' }, 'Stays on your device. Nothing is sent anywhere. ', h('button', { type: 'button', class: 'linkbtn', onclick: () => setText(SAMPLE_TEXT) }, 'Try sample text')),
   );
 
   function setText(text: string): void {

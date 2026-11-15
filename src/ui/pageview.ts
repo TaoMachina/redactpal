@@ -274,7 +274,15 @@ export class PageView {
 
     s.addEventListener('pointerdown', (e) => {
       const st = this.host.state();
-      if (st.preview || e.button !== 0 || this.gesture) return;
+      if (this.gesture) {
+        // A new primary pointer means every earlier pointer is up, so a gesture still recorded is
+        // stale (its pointerup/pointercancel never arrived, which iOS does when scrolling or a
+        // system gesture takes over). Without this, every later tap on the page would be ignored.
+        // A second finger while one is down is a pinch/scroll, never a box: drop the gesture.
+        this.cancelGesture();
+        if (!e.isPrimary) return;
+      }
+      if (st.preview || e.button !== 0) return;
       if ((e.target as Element).closest('.region__del, .everywhere')) return;
       const canDraw = e.pointerType !== 'touch' || st.drawMode;
       this.gesture = {
@@ -318,8 +326,7 @@ export class PageView {
     const finish = (e: PointerEvent, cancelled: boolean) => {
       const g = this.gesture;
       if (!g || e.pointerId !== g.pointerId) return;
-      this.gesture = null;
-      this.ghost.hidden = true;
+      this.cancelGesture();
       if (cancelled) return;
       const end = this.toSource(e);
       if (!g.moved) {
@@ -338,15 +345,34 @@ export class PageView {
     };
     s.addEventListener('pointerup', (e) => finish(e, false));
     s.addEventListener('pointercancel', (e) => finish(e, true));
+    // Capture lost without a pointerup (iOS when a scroll/zoom starts, or the element re-rendered).
+    // After a normal pointerup the gesture is already gone, so this is a no-op then.
+    s.addEventListener('lostpointercapture', (e) => finish(e, true));
     s.addEventListener('pointerleave', (e) => {
       if (e.pointerType === 'mouse' && !this.gesture) this.setHover(null);
     });
-    s.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.gesture) {
-        this.gesture = null;
-        this.ghost.hidden = true;
-      }
-    });
+    window.addEventListener('blur', this.cancelGesture);
+    document.addEventListener('visibilitychange', this.cancelGesture);
+  }
+
+  /** Forget the gesture in progress (no box, no tap) and release the pointer. Always safe to call. */
+  private cancelGesture = (): void => {
+    const g = this.gesture;
+    this.gesture = null;
+    this.ghost.hidden = true;
+    if (!g) return;
+    try {
+      if (this.surface.hasPointerCapture(g.pointerId)) this.surface.releasePointerCapture(g.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  /** Escape while dragging out a box (called from the review screen's key handler). */
+  cancelDrawing(): boolean {
+    if (!this.gesture) return false;
+    this.cancelGesture();
+    return true;
   }
 
   private updateHover(e: PointerEvent): void {
@@ -362,6 +388,9 @@ export class PageView {
 
   destroy(): void {
     this.destroyed = true;
+    this.cancelGesture();
+    window.removeEventListener('blur', this.cancelGesture);
+    document.removeEventListener('visibilitychange', this.cancelGesture);
     if (this.renderTimer) clearTimeout(this.renderTimer);
     this.io?.disconnect();
     this.ro?.disconnect();

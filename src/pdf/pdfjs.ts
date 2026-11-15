@@ -32,14 +32,14 @@ const ASSETS: Record<string, Map<string, string>> = {
 };
 
 /** Same-origin replacement for pdf.js' DOMBinaryDataFactory (which needs a directory URL). */
-class BlotBinaryDataFactory {
+class RedactlyBinaryDataFactory {
   // pdf.js constructs the factory with { cMapUrl, standardFontDataUrl, wasmUrl }; we ignore them.
   constructor(_opts?: unknown) {}
   async fetch({ kind, filename }: { kind: string; filename: string }): Promise<Uint8Array> {
     const url = ASSETS[kind]?.get(filename);
-    if (!url) throw new Error(`Blot: no bundled pdf.js ${kind} asset "${filename}"`);
+    if (!url) throw new Error(`Redactly: no bundled pdf.js ${kind} asset "${filename}"`);
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Blot: failed to load ${url} (${res.status})`);
+    if (!res.ok) throw new Error(`Redactly: failed to load ${url} (${res.status})`);
     return new Uint8Array(await res.arrayBuffer());
   }
 }
@@ -55,7 +55,7 @@ export function documentParams(data: Uint8Array): Parameters<typeof pdfjs.getDoc
     standardFontDataUrl: 'blot-assets/standard_fonts/',
     wasmUrl: 'blot-assets/wasm/',
     useWorkerFetch: false,
-    BinaryDataFactory: BlotBinaryDataFactory,
+    BinaryDataFactory: RedactlyBinaryDataFactory,
     useWasm: true,
     // No XFA forms (they can contain scripts / remote resources). Non-embedded fonts use local() system
     // fonts (no network; best for non-embedded CJK), Symbol/ZapfDingbats come from our bundled standard fonts.

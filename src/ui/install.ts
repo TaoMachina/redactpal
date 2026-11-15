@@ -82,7 +82,7 @@ export function createInstallLink(): { el: HTMLElement; destroy(): void } {
         { class: 'install__how', id: 'install-how', hidden: true },
         'In Safari, tap Share ',
         svg(SHARE_ICON),
-        ' then “Add to Home Screen”. Blot opens like an app and works offline.',
+        ' then “Add to Home Screen”. Redactly opens like an app and works offline.',
       );
       const link = h(
         'button',

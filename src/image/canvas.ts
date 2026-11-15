@@ -41,3 +41,26 @@ export function releaseCanvas(canvas: AnyCanvas): void {
   canvas.width = 0;
   canvas.height = 0;
 }
+
+/**
+ * A new ImageBitmap of `src` resized to exactly width × height (the source is left untouched).
+ * Tries createImageBitmap's own resize (native, cheap), then a canvas.
+ */
+export async function resizedBitmap(src: ImageBitmap | AnyCanvas, width: number, height: number): Promise<ImageBitmap> {
+  try {
+    const b = await createImageBitmap(src, { resizeWidth: width, resizeHeight: height, resizeQuality: 'high' });
+    if (b.width === width && b.height === height) return b;
+    b.close(); // resize options ignored by this engine
+  } catch {
+    // fall through to the canvas path
+  }
+  const { canvas, ctx } = createCanvas(width, height);
+  try {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, width, height);
+    return 'transferToImageBitmap' in canvas ? canvas.transferToImageBitmap() : await createImageBitmap(canvas);
+  } finally {
+    releaseCanvas(canvas);
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "name": "Blot — redact before you share",
-  "short_name": "Blot",
+  "name": "Redactly — redact before you share",
+  "short_name": "Redactly",
   "description": "Black out emails, phone numbers, API keys and card numbers in screenshots, PDFs and text before you share them. Runs on your device — nothing is uploaded.",
   "id": "./",
   "start_url": "./",

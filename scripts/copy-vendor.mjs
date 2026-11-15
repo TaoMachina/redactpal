@@ -67,7 +67,7 @@ for (const [src, rel, transform] of files) {
 writeFileSync(
   join(out, 'LICENSES', 'README.txt'),
   [
-    'OCR runtime shipped with Blot (served from this origin, never from a CDN):',
+    'OCR runtime shipped with Redactly (served from this origin, never from a CDN):',
     `- tesseract.js ${require('tesseract.js/package.json').version} (Apache-2.0) — worker.min.js`,
     `- tesseract.js-core ${require('tesseract.js-core/package.json').version} (Apache-2.0) — core/*.wasm.js (Tesseract OCR, Leptonica)`,
     `- @tesseract.js-data/eng ${LANG_DATA_VERSION} (Apache-2.0, from tesseract-ocr/tessdata_best) — lang/eng.traineddata.gz`,

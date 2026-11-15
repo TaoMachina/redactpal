@@ -5,16 +5,25 @@
 // coloured buttons. Upscaling small text, normalising polarity LOCALLY (so a dark sidebar is
 // inverted while the light page next to it is not) and stretching contrast is the single biggest
 // accuracy lever we have (measured on 12–13 px UI text: mangled secrets -> exact matches).
+//
+// Heavy loops are generators (see steps.ts) so the main-thread fallback can pause every ~30 ms; the
+// plain exported functions run them straight through and keep their original signatures.
 import type { Rect } from '../core/types';
+import { runSync, type Steps } from './steps';
 
 /** Desired text height as measured by estimateTextHeight() (≈ 0.75 × CSS font size). */
 export const TARGET_TEXT_HEIGHT = 24;
 /** Never upscale more than this (more hurts speed and, past ~3x, accuracy too). */
 export const MAX_UPSCALE = 3;
-/** Hard cap on the pixel count of the image handed to Tesseract (memory + time; < iOS canvas limit). */
+/** Default cap on the pixel count of the image handed to Tesseract (memory + time; < iOS canvas limit).
+ *  Phones use a lower cap, see budget.ts. */
 export const MAX_OCR_PIXELS = 16_000_000;
-/** Analysis (stats) is done on a copy of at most this many pixels. */
+/** Analysis (stats) is done on a copy of at most this many pixels (default; see budget.ts). */
 export const MAX_ANALYSIS_PIXELS = 4_000_000;
+/** Images larger than this are never upscaled (big photos / 5K screenshots already have large text). */
+export const NO_UPSCALE_ABOVE_PIXELS = 9_000_000;
+/** Work between two yields in 1-D loops. */
+const CHUNK = 1 << 16;
 
 /** Rec. 601 luminance, integer approximation. Transparent pixels are composited over white. */
 function lum(r: number, g: number, b: number, a: number): number {
@@ -107,55 +116,91 @@ export function polarityMask(
   globalDark: boolean,
   smallRadius = 0,
 ): Uint8Array {
+  return runSync(polarityMaskSteps(gray, width, height, radius, globalDark, smallRadius));
+}
+
+export function* polarityMaskSteps(
+  gray: ArrayLike<number>,
+  width: number,
+  height: number,
+  radius: number,
+  globalDark: boolean,
+  smallRadius = 0,
+): Steps<Uint8Array> {
   const W1 = width + 1;
   // Integral images of the dark/light indicator images.
   const iDark = new Uint32Array(W1 * (height + 1));
   const iLight = new Uint32Array(W1 * (height + 1));
   for (let y = 0; y < height; y++) {
-    let rd = 0;
-    let rl = 0;
-    for (let x = 0; x < width; x++) {
-      const v = gray[y * width + x];
-      if (v < DARK_LEVEL) rd++;
-      else if (v > LIGHT_LEVEL) rl++;
-      const k = (y + 1) * W1 + x + 1;
-      iDark[k] = iDark[k - W1] + rd;
-      iLight[k] = iLight[k - W1] + rl;
-    }
+    integralRow(gray, width, y, iDark, iLight);
+    yield;
   }
-  const box = (ii: Uint32Array, x0: number, y0: number, x1: number, y1: number) =>
-    ii[y1 * W1 + x1] - ii[y0 * W1 + x1] - ii[y1 * W1 + x0] + ii[y0 * W1 + x0];
-
   const r = Math.max(1, Math.round(radius));
   const rs = Math.round(smallRadius);
   const mask = new Uint8Array(width * height);
   for (let y = 0; y < height; y++) {
-    const y0 = Math.max(0, y - r);
-    const y1 = Math.min(height, y + r + 1);
-    const sy0 = Math.max(0, y - rs);
-    const sy1 = Math.min(height, y + rs + 1);
-    for (let x = 0; x < width; x++) {
-      const x0 = Math.max(0, x - r);
-      const x1 = Math.min(width, x + r + 1);
-      const area = (x1 - x0) * (y1 - y0);
-      const d = box(iDark, x0, y0, x1, y1);
-      const l = box(iLight, x0, y0, x1, y1);
-      let inv: boolean;
-      if (d >= 0.6 * area) inv = true; // clearly a dark surface
-      else if (l >= 0.35 * area) inv = false; // light surface
-      else if (d >= 0.35 * area) inv = d > l;
-      else if (d !== l) inv = l > d; // mid-tone surface: light text -> invert
-      else inv = globalDark;
-      if (!inv && rs > 0) {
-        const sx0 = Math.max(0, x - rs);
-        const sx1 = Math.min(width, x + rs + 1);
-        inv = box(iDark, sx0, sy0, sx1, sy1) >= 0.6 * (sx1 - sx0) * (sy1 - sy0);
-      }
-      mask[y * width + x] = inv ? 1 : 0;
-    }
+    polarityRow(iDark, iLight, width, height, y, r, rs, globalDark, mask);
+    yield;
   }
-  growIntoDark(mask, gray, width, height, Math.max(4, 2 * rs + 2)); // 4-connected steps: corners need ~2x
+  yield* growIntoDarkSteps(mask, gray, width, height, Math.max(4, 2 * rs + 2)); // 4-connected steps: corners need ~2x
   return mask;
+}
+
+// Per-row kernels of polarityMask. Plain functions (not generator code) so engines fully optimise them.
+function integralRow(gray: ArrayLike<number>, width: number, y: number, iDark: Uint32Array, iLight: Uint32Array): void {
+  const W1 = width + 1;
+  let rd = 0;
+  let rl = 0;
+  for (let x = 0; x < width; x++) {
+    const v = gray[y * width + x];
+    if (v < DARK_LEVEL) rd++;
+    else if (v > LIGHT_LEVEL) rl++;
+    const k = (y + 1) * W1 + x + 1;
+    iDark[k] = iDark[k - W1] + rd;
+    iLight[k] = iLight[k - W1] + rl;
+  }
+}
+
+function polarityRow(
+  iDark: Uint32Array,
+  iLight: Uint32Array,
+  width: number,
+  height: number,
+  y: number,
+  r: number,
+  rs: number,
+  globalDark: boolean,
+  mask: Uint8Array,
+): void {
+  const W1 = width + 1;
+  const y0 = Math.max(0, y - r);
+  const y1 = Math.min(height, y + r + 1);
+  const sy0 = Math.max(0, y - rs);
+  const sy1 = Math.min(height, y + rs + 1);
+  const r0 = y0 * W1;
+  const r1 = y1 * W1;
+  const s0 = sy0 * W1;
+  const s1 = sy1 * W1;
+  for (let x = 0; x < width; x++) {
+    const x0 = Math.max(0, x - r);
+    const x1 = Math.min(width, x + r + 1);
+    const area = (x1 - x0) * (y1 - y0);
+    const d = iDark[r1 + x1] - iDark[r0 + x1] - iDark[r1 + x0] + iDark[r0 + x0];
+    const l = iLight[r1 + x1] - iLight[r0 + x1] - iLight[r1 + x0] + iLight[r0 + x0];
+    let inv: boolean;
+    if (d >= 0.6 * area) inv = true; // clearly a dark surface
+    else if (l >= 0.35 * area) inv = false; // light surface
+    else if (d >= 0.35 * area) inv = d > l;
+    else if (d !== l) inv = l > d; // mid-tone surface: light text -> invert
+    else inv = globalDark;
+    if (!inv && rs > 0) {
+      const sx0 = Math.max(0, x - rs);
+      const sx1 = Math.min(width, x + rs + 1);
+      const sd = iDark[s1 + sx1] - iDark[s0 + sx1] - iDark[s1 + sx0] + iDark[s0 + sx0];
+      inv = sd >= 0.6 * (sx1 - sx0) * (sy1 - sy0);
+    }
+    mask[y * width + x] = inv ? 1 : 0;
+  }
 }
 
 /**
@@ -164,7 +209,7 @@ export function polarityMask(
  * Tesseract's layout analysis. Extend the mask into DARK pixels connected to an inverted dark
  * pixel, at most `maxDist` px (so dark text near a panel is not swallowed).
  */
-function growIntoDark(mask: Uint8Array, gray: ArrayLike<number>, width: number, height: number, maxDist: number): void {
+function* growIntoDarkSteps(mask: Uint8Array, gray: ArrayLike<number>, width: number, height: number, maxDist: number): Steps<void> {
   const n = width * height;
   const dist = new Uint16Array(n);
   const queue = new Int32Array(n);
@@ -175,8 +220,10 @@ function growIntoDark(mask: Uint8Array, gray: ArrayLike<number>, width: number, 
       queue[tail++] = i;
       dist[i] = 1;
     }
+    if ((i & (CHUNK - 1)) === CHUNK - 1) yield;
   }
   while (head < tail) {
+    if ((head & (CHUNK - 1)) === CHUNK - 1) yield;
     const i = queue[head++];
     const dd = dist[i];
     if (dd > maxDist) continue;
@@ -192,43 +239,92 @@ function growIntoDark(mask: Uint8Array, gray: ArrayLike<number>, width: number, 
 }
 
 /**
- * 1-D running max (or min) over a window of 2r+1 (van Herk / Gil-Werman, O(n) for any r).
- * Reads `n` samples from `src` at `off + i*stride`, writes to `dst` likewise.
+ * 1-D running max (or min) over a window of 2r+1 (van Herk / Gil-Werman, O(n) for any r) of the
+ * `n` samples at src[off ..], written to dst[off ..]. Out-of-range samples count as 0 (max) / 255 (min).
+ * `p`, `g`, `h`: scratch of at least n + 2r.
  */
 function runningExtreme(
   src: Uint8Array,
   dst: Uint8Array,
   off: number,
-  stride: number,
   n: number,
   r: number,
   isMax: boolean,
+  p: Uint8Array,
   g: Uint8Array,
   h: Uint8Array,
 ): void {
   const w = 2 * r + 1;
-  const pad = isMax ? 0 : 255;
   const len = n + 2 * r;
-  const at = (i: number) => (i < r || i >= n + r ? pad : src[off + (i - r) * stride]);
-  const pick = isMax ? (a: number, b: number) => (a > b ? a : b) : (a: number, b: number) => (a < b ? a : b);
-  for (let i = 0; i < len; i++) g[i] = i % w === 0 ? at(i) : pick(g[i - 1], at(i));
-  for (let i = len - 1; i >= 0; i--) h[i] = i === len - 1 || (i + 1) % w === 0 ? at(i) : pick(h[i + 1], at(i));
+  const pad = isMax ? 0 : 255;
+  p.fill(pad, 0, r);
+  p.set(src.subarray(off, off + n), r);
+  p.fill(pad, r + n, len);
+  // g: running extreme from the start of each block of w; h: from the end of each block.
+  for (let i = 0, c = 0; i < len; i++, c++) {
+    if (c === w) c = 0;
+    const v = p[i];
+    if (c === 0) g[i] = v;
+    else {
+      const a = g[i - 1];
+      g[i] = isMax ? (a > v ? a : v) : a < v ? a : v;
+    }
+  }
+  for (let i = len - 1, c = (len - 1) % w; i >= 0; i--, c = c === 0 ? w - 1 : c - 1) {
+    const v = p[i];
+    if (i === len - 1 || c === w - 1) h[i] = v;
+    else {
+      const a = h[i + 1];
+      h[i] = isMax ? (a > v ? a : v) : a < v ? a : v;
+    }
+  }
   for (let i = 0; i < n; i++) {
     // window [i, i + 2r] in padded coordinates
-    dst[off + i * stride] = pick(h[i], g[i + 2 * r]);
+    const a = h[i];
+    const b = g[i + 2 * r];
+    dst[off + i] = isMax ? (a > b ? a : b) : a < b ? a : b;
   }
 }
 
-/** Separable square max (dilate) or min (erode) filter of radius r. */
-function extremeFilter(img: Uint8Array, width: number, height: number, r: number, isMax: boolean): Uint8Array {
-  const tmp = new Uint8Array(img.length);
-  const out = new Uint8Array(img.length);
+/** Cache-blocked transpose: src is width × height (row-major), dst becomes height × width. */
+function transpose(src: Uint8Array, dst: Uint8Array, width: number, height: number): void {
+  const B = 64;
+  for (let by = 0; by < height; by += B) {
+    const ey = Math.min(height, by + B);
+    for (let bx = 0; bx < width; bx += B) {
+      const ex = Math.min(width, bx + B);
+      for (let y = by; y < ey; y++) {
+        const row = y * width;
+        for (let x = bx; x < ex; x++) dst[x * height + y] = src[row + x];
+      }
+    }
+  }
+}
+
+/**
+ * Separable square max (dilate) or min (erode) filter of radius r. The vertical pass runs on a
+ * transposed copy so both passes read memory sequentially (a strided column walk is several times
+ * slower on large images).
+ */
+function* extremeFilterSteps(img: Uint8Array, width: number, height: number, r: number, isMax: boolean): Steps<Uint8Array> {
+  const a = new Uint8Array(img.length);
+  const b = new Uint8Array(img.length);
   const scratch = Math.max(width, height) + 2 * r;
+  const p = new Uint8Array(scratch);
   const g = new Uint8Array(scratch);
   const h = new Uint8Array(scratch);
-  for (let y = 0; y < height; y++) runningExtreme(img, tmp, y * width, 1, width, r, isMax, g, h);
-  for (let x = 0; x < width; x++) runningExtreme(tmp, out, x, width, height, r, isMax, g, h);
-  return out;
+  for (let y = 0; y < height; y++) {
+    runningExtreme(img, a, y * width, width, r, isMax, p, g, h);
+    yield;
+  }
+  transpose(a, b, width, height); // b: height × width -> rows are the original columns
+  yield;
+  for (let x = 0; x < width; x++) {
+    runningExtreme(b, a, x * height, height, r, isMax, p, g, h);
+    yield;
+  }
+  transpose(a, b, height, width);
+  return b;
 }
 
 /**
@@ -237,7 +333,12 @@ function extremeFilter(img: Uint8Array, width: number, height: number, r: number
  * table header rows, input fields, tinted cards — with their real edges.
  */
 export function localBackground(img: Uint8Array, width: number, height: number, r: number): Uint8Array {
-  return extremeFilter(extremeFilter(img, width, height, r, true), width, height, r, false);
+  return runSync(localBackgroundSteps(img, width, height, r));
+}
+
+export function* localBackgroundSteps(img: Uint8Array, width: number, height: number, r: number): Steps<Uint8Array> {
+  const dilated = yield* extremeFilterSteps(img, width, height, r, true);
+  return yield* extremeFilterSteps(dilated, width, height, r, false);
 }
 
 /** Everything needed to turn the (scaled) colour image into Tesseract input. */
@@ -272,9 +373,13 @@ function flatten(v: number, bg: number): number {
  * `textHeight` (analysis px) sets the window sizes; null -> a size-based default.
  */
 export function planTone(gray: Uint8Array, width: number, height: number, textHeight: number | null): TonePlan {
+  return runSync(planToneSteps(gray, width, height, textHeight));
+}
+
+export function* planToneSteps(gray: Uint8Array, width: number, height: number, textHeight: number | null): Steps<TonePlan> {
   const bg = analyzeBackground(histogram(gray));
   const th = textHeight ?? Math.max(8, Math.min(width, height) / 60);
-  const mask = polarityMask(gray, width, height, Math.max(6, Math.round(th * 2.5)), bg.dark, Math.max(3, Math.round(th * 1.2)));
+  const mask = yield* polarityMaskSteps(gray, width, height, Math.max(6, Math.round(th * 2.5)), bg.dark, Math.max(3, Math.round(th * 1.2)));
   const norm = new Uint8Array(gray.length);
   let inverted = false;
   for (let i = 0; i < gray.length; i++) {
@@ -282,9 +387,13 @@ export function planTone(gray: Uint8Array, width: number, height: number, textHe
       norm[i] = 255 - gray[i];
       inverted = true;
     } else norm[i] = gray[i];
+    if ((i & (CHUNK - 1)) === CHUNK - 1) yield;
   }
-  const background = localBackground(norm, width, height, Math.max(2, Math.round(th * 0.6)));
-  for (let i = 0; i < norm.length; i++) norm[i] = flatten(norm[i], background[i]);
+  const background = yield* localBackgroundSteps(norm, width, height, Math.max(2, Math.round(th * 0.6)));
+  for (let i = 0; i < norm.length; i++) {
+    norm[i] = flatten(norm[i], background[i]);
+    if ((i & (CHUNK - 1)) === CHUNK - 1) yield;
+  }
   const h = histogram(norm);
   let lo = percentile(h, 0.005);
   let hi = percentile(h, 0.995);
@@ -300,15 +409,24 @@ export function planTone(gray: Uint8Array, width: number, height: number, textHe
 /**
  * In place: RGBA (width × height, any scale of the analysed image) -> gray R=G=B with local
  * polarity + background normalisation and contrast stretch, alpha forced opaque.
+ * Strips: `rgba` may hold just rows y0 .. y0+height of an image that is `totalHeight` rows tall
+ * (so the caller never needs a full-size ImageData copy).
  */
-export function applyTonePlanRgba(rgba: Uint8ClampedArray | Uint8Array, width: number, height: number, plan: TonePlan): void {
+export function applyTonePlanRgba(
+  rgba: Uint8ClampedArray | Uint8Array,
+  width: number,
+  height: number,
+  plan: TonePlan,
+  y0 = 0,
+  totalHeight = height,
+): void {
   const stretch = new Uint8Array(256);
   const span = Math.max(1, plan.hi - plan.lo);
   for (let v = 0; v < 256; v++) stretch[v] = Math.max(0, Math.min(255, Math.round(((v - plan.lo) * 255) / span)));
   const mx = new Uint32Array(width);
   for (let x = 0; x < width; x++) mx[x] = Math.min(plan.maskWidth - 1, Math.floor(((x + 0.5) * plan.maskWidth) / width));
   for (let y = 0; y < height; y++) {
-    const my = Math.min(plan.maskHeight - 1, Math.floor(((y + 0.5) * plan.maskHeight) / height));
+    const my = Math.min(plan.maskHeight - 1, Math.floor(((y0 + y + 0.5) * plan.maskHeight) / totalHeight));
     const mrow = my * plan.maskWidth;
     for (let x = 0, j = y * width * 4; x < width; x++, j += 4) {
       const k = mrow + mx[x];
@@ -337,6 +455,16 @@ export function estimateTextHeight(
   bgLevel: number,
   opts: { inkDelta?: number; strips?: number } = {},
 ): number | null {
+  return runSync(estimateTextHeightSteps(gray, width, height, bgLevel, opts));
+}
+
+export function* estimateTextHeightSteps(
+  gray: ArrayLike<number>,
+  width: number,
+  height: number,
+  bgLevel: number,
+  opts: { inkDelta?: number; strips?: number } = {},
+): Steps<number | null> {
   if (width < 8 || height < 8) return null;
   const inkDelta = opts.inkDelta ?? 48;
   const strips = Math.max(1, Math.min(opts.strips ?? 8, Math.floor(width / 24)));
@@ -348,6 +476,7 @@ export function estimateTextHeight(
     const x1 = Math.min(width, x0 + stripW);
     let run = 0;
     for (let y = 0; y <= height; y++) {
+      if ((y & 63) === 63) yield;
       let ink = false;
       if (y < height) {
         const row = y * width;
@@ -377,7 +506,8 @@ export function estimateTextHeight(
 
 /**
  * Pick the OCR scale factor. Upscales small text toward TARGET_TEXT_HEIGHT, never above
- * MAX_UPSCALE, and shrinks only if the result would exceed `maxPixels`.
+ * MAX_UPSCALE (and never for images above NO_UPSCALE_ABOVE_PIXELS), and shrinks only if the result
+ * would exceed `maxPixels`.
  */
 export function chooseScale(
   textHeight: number | null,
@@ -394,10 +524,14 @@ export function chooseScale(
   } else {
     s = Math.min(MAX_UPSCALE, TARGET_TEXT_HEIGHT / textHeight);
   }
+  // Big photos: text is rarely tiny, and an upscaled 12 MP photo is what runs phones out of memory.
+  if (width * height > NO_UPSCALE_ABOVE_PIXELS) s = Math.min(s, 1);
   const maxS = Math.sqrt(maxPixels / Math.max(1, width * height));
   s = Math.min(s, maxS);
-  // Round down to 1/8 steps so the scale is stable.
-  return Math.max(0.05, Math.floor(s * 8) / 8);
+  // Round down so the scale is stable: 1/8 steps when upscaling, 1/256 when shrinking (coarse steps
+  // would throw away a noticeable part of a big photo's resolution).
+  const step = s < 1 ? 256 : 8;
+  return Math.max(0.05, Math.floor(s * step) / step);
 }
 
 /** Tesseract bbox (x0,y0 top-left, x1,y1 bottom-right, exclusive) in OCR-image px. */
@@ -445,11 +579,22 @@ export interface OcrPreparation {
  * the normalised image (where dark panels no longer read as one giant "ink" band) -> OCR scale.
  * `gray` is the analysis copy (aw × ah) of an image whose original size is W × H.
  */
-export function prepareOcr(gray: Uint8Array, aw: number, ah: number, W: number, H: number): OcrPreparation {
-  const rough = estimateTextHeight(gray, aw, ah, analyzeBackground(histogram(gray)).level);
-  const plan = planTone(gray, aw, ah, rough);
-  const refined = estimateTextHeight(plan.normalized, aw, ah, analyzeBackground(histogram(plan.normalized)).level);
+export function prepareOcr(gray: Uint8Array, aw: number, ah: number, W: number, H: number, maxPixels = MAX_OCR_PIXELS): OcrPreparation {
+  return runSync(prepareOcrSteps(gray, aw, ah, W, H, maxPixels));
+}
+
+export function* prepareOcrSteps(
+  gray: Uint8Array,
+  aw: number,
+  ah: number,
+  W: number,
+  H: number,
+  maxPixels = MAX_OCR_PIXELS,
+): Steps<OcrPreparation> {
+  const rough = yield* estimateTextHeightSteps(gray, aw, ah, analyzeBackground(histogram(gray)).level);
+  const plan = yield* planToneSteps(gray, aw, ah, rough);
+  const refined = yield* estimateTextHeightSteps(plan.normalized, aw, ah, analyzeBackground(histogram(plan.normalized)).level);
   const est = refined ?? rough;
   const textHeight = est == null ? null : est * (W / aw);
-  return { plan, scale: chooseScale(textHeight, W, H), textHeight };
+  return { plan, scale: chooseScale(textHeight, W, H, maxPixels), textHeight };
 }

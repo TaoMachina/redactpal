@@ -1,4 +1,4 @@
-// Convert tesseract.js v7 `blocks` output (recognize(img, {}, { blocks: true })) into Blot tokens.
+// Convert tesseract.js v7 `blocks` output (recognize(img, {}, { blocks: true })) into Redactly tokens.
 // Pure, no DOM -> unit-testable in Node.
 //
 // Reading order: Tesseract's own page layout (PSM 3) recognises words well, but on UI screenshots it

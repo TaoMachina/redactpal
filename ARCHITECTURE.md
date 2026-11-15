@@ -1,4 +1,4 @@
-# Blot — architecture
+# Redactly — architecture
 
 **One-liner:** drop a screenshot, PDF or text in → sensitive stuff is found and blacked out → copy/download the safe version. Everything happens in your browser. Nothing is uploaded.
 

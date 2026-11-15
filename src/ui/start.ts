@@ -34,6 +34,11 @@ export function createStart(on: StartHandlers): StartController {
       fileInput.value = '';
       if (f) on.onFile(f);
     },
+    // Picker closed without a file (iOS fires 'cancel', or nothing at all): nothing was started, so
+    // there is no state to undo; just make sure the next pick of the same file still fires change.
+    oncancel: () => {
+      fileInput.value = '';
+    },
   });
   const choose = h('button', { type: 'button', class: 'btn btn--primary btn--lg', onclick: () => fileInput.click() }, coarse ? 'Choose a photo or file' : 'Choose a file');
   const title = h('h1', { class: 'start__title', id: 'start-title', tabindex: '-1' }, 'Hide sensitive info before you share.');

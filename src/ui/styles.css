@@ -1,4 +1,4 @@
-/* Blot — a security-envelope look: cool paper, blue-black ink, a faint crosshatch tint where
+/* Redactly — a security-envelope look: cool paper, blue-black ink, a faint crosshatch tint where
    sensitive things are handled, and one true black reserved for the redaction itself. */
 
 :root {
@@ -32,7 +32,7 @@
   --bar-h: 3.75rem;
   --head-h: 3.5rem;
 
-  /* Notches, rounded corners and home indicators (viewport-fit=cover; mostly matters when Blot runs
+  /* Notches, rounded corners and home indicators (viewport-fit=cover; mostly matters when Redactly runs
      as an installed app or in landscape). Side gutters never shrink below --gutter. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -145,6 +145,10 @@ html.is-app-shell body {
 }
 html.is-app-shell .shell {
   height: 100vh;
+  /* iOS before 15.4 has no dvh, and its 100vh is the viewport with the toolbars hidden, which
+     puts the action bar under Safari's/Chrome's bottom toolbar (where the document can't scroll
+     to reveal it). fill-available is the visible height there; dvh wins wherever it exists. */
+  height: -webkit-fill-available;
   height: 100dvh;
   min-height: 0;
   overflow: hidden;
@@ -286,6 +290,13 @@ body[data-screen='text'] .main {
 }
 .btn--block {
   width: 100%;
+}
+.btn--icon {
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  height: 44px;
+  padding: 0;
 }
 .btn--tool {
   min-height: 40px;
@@ -884,6 +895,29 @@ body.is-dragging .drop-overlay {
   font-size: 0.85rem;
   color: var(--ink-2);
 }
+/* "More ways to save" at the end of the list: only where the action bar is one row (narrow). */
+.panel__save {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.panel__save-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+.panel__save-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.panel__save .linkbtn {
+  min-height: 44px;
+}
 
 .fgroup {
   margin-top: 1rem;
@@ -1190,6 +1224,17 @@ body.is-dragging .drop-overlay {
   font-size: 0.8em;
   color: var(--ink-2);
 }
+/* Wide: "See list ▾". Narrow: list icon + count (see the max-width: 599px block). */
+.disclosure__icon,
+.disclosure__count {
+  display: none;
+}
+.disclosure__icon {
+  flex: none;
+}
+.actions__dl {
+  display: none;
+}
 
 .linkbtn {
   display: inline;
@@ -1261,6 +1306,18 @@ body.is-dragging .drop-overlay {
   overflow: auto;
   overscroll-behavior: contain;
 }
+/* Phones/tablets: no "Enlarge" button; people pinch-zoom the page itself. The stage allows panning
+   and pinch-zoom (not double-tap zoom); Draw mode turns gestures off on the page surface only
+   (.surface.is-touch-draw), so a finger drags out a box there and still scrolls/zooms elsewhere.
+   The stage must not swallow the end of a scroll (overscroll contain) here, or a page zoomed in
+   with two fingers couldn't be panned back to the bars. The app-shell document never scrolls
+   (overflow hidden, overscroll none), so nothing else chains. */
+@media (pointer: coarse) {
+  .stage {
+    touch-action: pan-x pan-y pinch-zoom;
+    overscroll-behavior: auto;
+  }
+}
 .review__bar,
 .actions {
   flex: none;
@@ -1271,16 +1328,52 @@ body.is-dragging .drop-overlay {
     order: 3;
     width: 100%;
   }
-  /* Primary button gets its own full-width row; small links sit next to the disclosure. */
+  /* One row: [≡ 6] [⬇] [Share · 6 hidden ———]. Download stays visible without opening anything;
+     the other ways to save are at the end of the list (.panel__save). */
+  .actions {
+    padding-top: 0.5rem;
+    padding-bottom: calc(0.5rem + var(--safe-bottom));
+  }
+  .actions__row {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
   .actions__main {
-    display: contents;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 0;
+    gap: 0.5rem;
   }
   .actions__more {
-    margin-left: auto;
+    display: none;
+  }
+  .actions__dl {
+    display: inline-flex;
   }
   .btn--outcome {
-    order: 3;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .disclosure {
+    flex: none;
+    min-height: 44px;
+    padding: 0 0.8rem;
+    gap: 0.35rem;
+  }
+  .disclosure__label,
+  .disclosure__caret {
+    display: none;
+  }
+  .disclosure__icon,
+  .disclosure__count {
+    display: inline;
+  }
+  .panel__save {
+    display: flex;
   }
 }
 
@@ -1582,6 +1675,33 @@ body[data-screen='text'] .foot {
 }
 .text__actions-row .done__title {
   margin: 0 auto 0 0;
+}
+.text__note {
+  margin-top: 0.75rem;
+}
+@media (max-width: 599px) {
+  /* One row: "Now paste it anywhere." beside "✓ Copied", or the button alone, full width. */
+  .text__actions-row {
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+  }
+  .text__actions-row .done__title {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+  .text__actions-row .btn--outcome {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+@media (pointer: coarse) {
+  .textarea {
+    font-size: 1rem; /* below 16px iOS zooms the page on focus and leaves it zoomed */
+  }
 }
 .restore {
   margin-top: 1rem;
