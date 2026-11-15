@@ -313,6 +313,8 @@ function footer(): HTMLElement {
         point('Rebuilt from pixels.', 'You get a new PNG, or a new PDF of page images: no location data, metadata or hidden text. PDF text won’t be selectable.'),
         point('Nothing is kept.', 'Closing the tab forgets your file and your terms.'),
       ),
+      // Which build this is (answers "is my phone on the latest version?") without cluttering the page.
+      h('p', { class: 'how__ver' }, `Version ${__BUILD__}`),
     ),
   );
 }

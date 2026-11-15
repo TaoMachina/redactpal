@@ -453,7 +453,8 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
 
     dlBtn.disabled = st.busy;
     const dlDone = st.done === 'download';
-    dlBtn.replaceChildren(svg(dlDone ? CHECK_ICON : DOWNLOAD_ICON));
+    // Icon + a word: an icon alone wasn't recognised as "download" on phones.
+    dlBtn.replaceChildren(svg(dlDone ? CHECK_ICON : DOWNLOAD_ICON), h('span', { class: 'actions__dl-label' }, dlDone ? 'Saved' : 'Save'));
     dlBtn.setAttribute('aria-label', dlDone ? 'Downloaded' : 'Download');
 
     doneEl.hidden = !st.done;

@@ -1718,7 +1718,23 @@ body[data-screen='text'] .foot {
   width: 100%;
   margin: 0.5rem 0;
 }
-.trust__ver {
+
+.how__ver {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
   opacity: 0.6;
   font-variant-numeric: tabular-nums;
+}
+
+/* Phones: the download control shows a word next to its icon. */
+.actions__dl {
+  gap: 0.35rem;
+  flex: none;
+  width: auto;
+  padding: 0 0.8rem;
+  font-weight: 600;
+}
+/* Phones show no title in the drop zone; keep the button clear of the decorative lines. */
+.dropzone__title.sr-only + .dropzone__actions {
+  margin-top: 1.5rem;
 }

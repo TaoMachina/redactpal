@@ -39,7 +39,7 @@ export function createStart(on: StartHandlers): StartController {
       fileInput.value = '';
     },
   });
-  const choose = h('button', { type: 'button', class: 'btn btn--primary btn--lg', onclick: () => fileInput.click() }, coarse ? 'Choose a photo or file' : 'Choose a file');
+  const choose = h('button', { type: 'button', class: 'btn btn--primary btn--lg', onclick: () => fileInput.click() }, coarse ? 'Choose a photo or PDF' : 'Choose a file');
   const title = h('h1', { class: 'start__title', id: 'start-title', tabindex: '-1' }, 'Hide sensitive info before you share.');
 
   // The specimen: three "lines of a document", one of them already blotted out. Decorative.
@@ -63,10 +63,11 @@ export function createStart(on: StartHandlers): StartController {
       },
     },
     specimen,
+    // One message, said once. Phones: the button says it all (the title stays for screen readers).
     h(
       'p',
-      { class: 'dropzone__title', id: 'dz-title' },
-      coarse ? 'Choose a screenshot, photo or PDF' : `Paste (${key}), drop a file, or choose one`,
+      { class: coarse ? 'dropzone__title sr-only' : 'dropzone__title', id: 'dz-title' },
+      coarse ? 'Choose a screenshot, photo or PDF' : `Paste (${key}) or drop a screenshot, photo or PDF`,
     ),
     h(
       'div',
@@ -74,7 +75,6 @@ export function createStart(on: StartHandlers): StartController {
       choose,
       null, // No Paste button on phones: a screenshot there goes to Photos, not the clipboard; tapping the box opens the picker.
     ),
-    h('p', { class: 'dropzone__sub' }, 'Screenshots and photos (PNG, JPG, WebP) or PDF'),
   );
 
   const install = createInstallLink();
@@ -101,8 +101,6 @@ export function createStart(on: StartHandlers): StartController {
       'Runs on your device. Turn off Wi-Fi and it still works. ',
       SOURCE_URL ? h('a', { href: SOURCE_URL, rel: 'noopener' }, 'Open source (MIT)') : h('span', null, 'Open source (MIT).'),
       install.el,
-      // Which build this is — so "is my phone on the latest version?" has an answer.
-      h('span', { class: 'trust__ver' }, ` · v${__BUILD__}`),
     ),
   );
 
