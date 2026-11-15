@@ -1,15 +1,17 @@
-// Text mode: paste text, see what's sensitive, copy a redacted or placeholder version, and restore
-// an AI reply from the in-memory placeholder mapping.
+// Text mode, built like the image review: ONE box. Paste → the box shows your text with what will
+// be hidden highlighted → click a highlight to keep it visible, select text to hide more → one
+// button copies the safe version. Values become placeholders like [EMAIL_1], which read fine to a
+// person and also let an AI's reply be turned back into your real details (offered after copying).
 import type { Finding } from '../core/types';
-import { applyPlaceholders, detect, redactText, restorePlaceholders } from '../detect';
+import { applyPlaceholders, detect, restorePlaceholders } from '../detect';
 import { announce, debounce, errorMessage, h } from './dom';
+import { copyText } from './export';
+import { plural } from './format';
+import { activeFindings, buildHighlightHtml } from './highlight';
+import { SAMPLE_TEXT } from './sample';
 
 /** Detection + highlighting rerun on every edit; beyond this the page would stall. */
 const MAX_TEXT = 2_000_000;
-import { copyText, downloadBlob } from './export';
-import { parseTerms, plural } from './format';
-import { activeFindings, buildHighlightHtml } from './highlight';
-import { SAMPLE_TEXT } from './sample';
 
 export interface TextHost {
   terms(): string[];
@@ -23,85 +25,56 @@ export interface TextController {
   setText(text: string): void;
 }
 
-type Mode = 'redacted' | 'placeholders';
-
 export function createTextMode(host: TextHost, initial = ''): TextController {
   let findings: Finding[] = [];
   const kept = new Set<string>(); // values the user chose to keep visible
-  let mode: Mode = 'redacted';
   let mapping: Record<string, string> = {};
+  let safeText = '';
+  let editing = !initial;
+  let preview = false;
+  let copied = false;
 
+  // ---- the one box: a textarea while editing, the highlighted text otherwise ----------------
   const input = h('textarea', {
     id: 'text-in',
-    class: 'textarea',
-    rows: '10',
+    class: 'textarea textbox__input',
+    rows: '12',
     spellcheck: 'false',
-    placeholder: 'Paste or type text here — an email, a log, a config file, a chat message…',
-    'aria-describedby': 'text-in-hint',
+    placeholder: 'Paste your text here (Ctrl+V) — an email, a message, a log, a config file…',
+    'aria-label': 'Your text',
   });
   input.value = initial;
+  const mirror = h('div', { class: 'mirror textbox__view', id: 'mirror', 'aria-live': 'off', 'aria-label': 'Your text with sensitive parts highlighted' });
+  const editLink = h('button', { type: 'button', class: 'linkbtn textbox__edit', onclick: () => setEditing(true) }, 'Edit text');
+  const box = h('div', { class: 'textbox' }, input, mirror, editLink);
 
-  const mirror = h('div', { class: 'mirror', id: 'mirror', 'aria-live': 'off' });
-  const foundLine = h('p', { class: 'text__found', role: 'status' });
+  const hint = h('p', { class: 'hint', role: 'status' });
   const errorLine = h('p', { class: 'field__error', role: 'alert' });
 
-  const terms = h('input', {
-    type: 'text',
-    id: 'text-terms',
-    class: 'input',
-    autocomplete: 'off',
-    spellcheck: 'false',
-    placeholder: 'e.g. Jane Doe, Acme, Project Falcon',
-    value: host.terms().join(', '),
-    'aria-describedby': 'text-terms-hint',
-  });
+  // ---- actions ---------------------------------------------------------------------------------
+  const hideSel = h('button', { type: 'button', class: 'btn btn--tool', hidden: true, onclick: () => hideSelection() }, 'Hide selected');
+  const previewBtn = h('button', { type: 'button', class: 'btn btn--tool btn--subtle', 'aria-pressed': 'false', title: 'See exactly what will be copied', onclick: () => setPreview(!preview) }, 'Preview');
+  const copyBtn = h('button', { type: 'button', class: 'btn btn--primary btn--outcome', onclick: () => void copySafe() });
+  const done = h('p', { class: 'done__title', hidden: true });
 
-  const output = h('textarea', { id: 'text-out', class: 'textarea textarea--out', rows: '8', readonly: true, spellcheck: 'false' });
-  const copyBtn = h('button', { type: 'button', class: 'btn btn--primary', onclick: () => { ensureFresh(); void copy(output.value, copyBtn, 'Copy'); } }, 'Copy');
-  const modeExplain = h('p', { class: 'field__hint', id: 'mode-explain' });
-
-  const radio = (value: Mode, label: string) =>
-    h(
-      'label',
-      { class: 'seg__opt' },
-      h('input', { type: 'radio', name: 'out-mode', value, checked: value === mode, onchange: () => setMode(value) }),
-      h('span', null, label),
-    );
-
-  // Restore section (placeholders only)
-  const reply = h('textarea', { id: 'ai-reply', class: 'textarea', rows: '6', spellcheck: 'false', placeholder: 'Paste the AI’s reply here' });
-  const restored = h('textarea', { id: 'restored', class: 'textarea textarea--out', rows: '6', readonly: true });
-  const restoreCopy = h('button', { type: 'button', class: 'btn', onclick: () => copy(restored.value, restoreCopy, 'Copy restored reply') }, 'Copy restored reply');
-  const saveMapping = h(
-    'button',
-    {
-      type: 'button',
-      class: 'btn btn--quiet',
-      onclick: () => {
-        const blob = new Blob([JSON.stringify(mapping, null, 2)], { type: 'application/json' });
-        downloadBlob(blob, 'blot-placeholders.json');
-      },
-    },
-    'Save mapping as file',
-  );
-  const restoreBox = h(
-    'section',
-    { class: 'restore', 'aria-labelledby': 'restore-title', hidden: true },
-    h('h2', { class: 'text__h2', id: 'restore-title' }, 'Put your real values back'),
-    h('label', { for: 'ai-reply', class: 'field__label' }, 'AI reply'),
+  // ---- after copying: optional "put your details back" for AI replies --------------------------
+  const reply = h('textarea', { id: 'ai-reply', class: 'textarea', rows: '5', spellcheck: 'false', placeholder: 'Paste the AI’s reply here' });
+  const restoredCopy = h('button', { type: 'button', class: 'btn btn--primary', disabled: true, onclick: () => void copyRestored() }, 'Copy with my details');
+  const restore = h(
+    'details',
+    { class: 'restore', hidden: true },
+    h('summary', null, 'Sent it to ChatGPT or another AI? Put your details back into its reply'),
+    h('p', { class: 'field__hint' }, 'Paste the reply below. Placeholders like [EMAIL_1] are swapped back for your real details. This only works until you close this tab.'),
     reply,
-    h('label', { for: 'restored', class: 'field__label' }, 'With your real values'),
-    restored,
-    h('div', { class: 'row' }, restoreCopy, saveMapping),
-    h('p', { class: 'field__hint' }, 'The mapping between placeholders and your values exists only in this tab. Closing it forgets them, unless you save the mapping.'),
+    h('div', { class: 'row' }, restoredCopy),
   );
 
-  // What `findings` was computed from. render() must never apply findings to different text
-  // (offsets would point at the wrong characters and parts of secrets could slip through).
-  let analysedText = '';
+  // What `findings` was computed from: never apply findings to different text (offsets would be
+  // wrong and parts of secrets could slip through).
+  let analysedText: string | null = null;
   let analysedTerms = '';
-  const isStale = () => input.value !== analysedText || terms.value !== analysedTerms;
-  /** Run detection now if the text or terms changed since the last run (debounce still pending). */
+  const termsKey = () => host.terms().join('\u0000');
+  const isStale = () => input.value !== analysedText || termsKey() !== analysedTerms;
   function ensureFresh(): void {
     if (isStale()) analyse();
   }
@@ -109,100 +82,157 @@ export function createTextMode(host: TextHost, initial = ''): TextController {
   function analyse(): void {
     const text = input.value;
     analysedText = text;
-    analysedTerms = terms.value;
+    analysedTerms = termsKey();
+    errorLine.textContent = '';
     if (text.length > MAX_TEXT) {
       findings = [];
-      output.value = '';
       errorLine.textContent = `That’s too much text for this page (${Math.round(text.length / 1e6)} MB). Paste up to 2 MB at a time.`;
-      return;
-    }
-    try {
-      findings = text ? detect(text, { customTerms: parseTerms(terms.value) }) : [];
-      errorLine.textContent = '';
-    } catch (e) {
-      findings = [];
-      errorLine.textContent = `Detection failed: ${errorMessage(e)}`;
+    } else {
+      try {
+        findings = text ? detect(text, { customTerms: host.terms() }) : [];
+      } catch (e) {
+        findings = [];
+        errorLine.textContent = `Detection failed: ${errorMessage(e)}`;
+      }
     }
     render();
   }
 
   function render(): void {
-    if (isStale()) return analyse(); // analyse() calls render() with fresh findings
+    if (isStale()) return analyse();
     const text = input.value;
-    mirror.innerHTML = buildHighlightHtml(text, findings, kept); // every piece is escaped in buildHighlightHtml
-    mirror.classList.toggle('is-empty', !text);
-    if (!text) mirror.textContent = 'Highlights appear here as you type.';
-
     const active = activeFindings(findings, kept);
-    foundLine.textContent = !text
-      ? ''
-      : findings.length === 0
-        ? 'We didn’t find anything sensitive. Add names or other words under “Always hide…”.'
-        : `${plural(active.length, 'item', 'items')} will be hidden${findings.length > active.length ? ` · ${findings.length - active.length} kept visible` : ''}. Select a highlight to keep it visible.`;
-
     try {
-      if (mode === 'redacted') {
-        output.value = text ? redactText(text, active, 'label') : '';
-        mapping = {};
-      } else {
-        const r = text ? applyPlaceholders(text, active) : { text: '', mapping: {} };
-        output.value = r.text;
-        mapping = r.mapping;
-      }
+      const r = text ? applyPlaceholders(text, active) : { text: '', mapping: {} };
+      safeText = r.text;
+      mapping = r.mapping;
     } catch (e) {
-      output.value = '';
-      errorLine.textContent = `Couldn’t build the output: ${errorMessage(e)}`;
+      safeText = '';
+      errorLine.textContent = `Couldn’t build the safe version: ${errorMessage(e)}`;
     }
-    restoreBox.hidden = mode !== 'placeholders';
-    saveMapping.disabled = Object.keys(mapping).length === 0;
-    modeExplain.textContent =
-      mode === 'redacted'
-        ? 'Sensitive values are replaced with labels like [REDACTED EMAIL]. They can’t be recovered.'
-        : 'Send this to ChatGPT/Claude, then paste the reply below to put your real values back.';
-    renderRestore();
+
+    const showView = !!text && !editing;
+    input.hidden = showView;
+    mirror.hidden = !showView;
+    editLink.hidden = !showView;
+    if (showView) {
+      if (preview) mirror.textContent = safeText;
+      else mirror.innerHTML = buildHighlightHtml(text, findings, kept); // every piece is escaped
+    }
+    mirror.classList.toggle('is-preview', preview);
+
+    if (!text) hint.textContent = '';
+    else if (findings.length === 0) hint.textContent = 'Nothing sensitive found. Select any text to hide it.';
+    else hint.textContent = `Found ${plural(findings.length, 'thing', 'things')} to hide. Click one to keep it visible · select text to hide more.`;
+
+    previewBtn.hidden = !showView;
+    previewBtn.setAttribute('aria-pressed', String(preview));
+    copyBtn.disabled = !text;
+    copyBtn.textContent = copied ? '✓ Copied' : text ? `Copy safe text · ${active.length} hidden` : 'Copy safe text';
+    done.hidden = !copied;
+    done.textContent = copied ? 'Now paste it anywhere.' : '';
+    restore.hidden = !copied || Object.keys(mapping).length === 0;
   }
 
-  function renderRestore(): void {
-    try {
-      restored.value = reply.value ? restorePlaceholders(reply.value, mapping) : '';
-    } catch (e) {
-      restored.value = '';
-      errorLine.textContent = `Couldn’t restore: ${errorMessage(e)}`;
-    }
-  }
-
-  function setMode(m: Mode): void {
-    mode = m;
+  function changed(): void {
+    copied = false;
     render();
   }
 
-  async function copy(text: string, btn: HTMLButtonElement, label: string): Promise<void> {
-    if (!text) return;
-    const ok = await copyText(text);
-    btn.textContent = ok ? 'Copied' : 'Copy failed — select and copy manually';
-    announce(ok ? 'Copied to clipboard.' : 'Copy failed.');
-    setTimeout(() => (btn.textContent = label), 1800);
+  function setEditing(v: boolean): void {
+    editing = v;
+    preview = false;
+    hideSel.hidden = true;
+    render();
+    if (v) input.focus();
   }
 
-  const analyseSoon = debounce(analyse, 150);
-  input.addEventListener('input', () => analyseSoon());
-  terms.addEventListener('input', debounce(() => {
-    host.setTerms(parseTerms(terms.value));
+  function setPreview(v: boolean): void {
+    preview = v;
+    hideSel.hidden = true;
+    render();
+  }
+
+  // ---- select text to hide it (every occurrence, like "Always hide…") -------------------------
+  function selectedInMirror(): string {
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    const r = sel.getRangeAt(0);
+    if (!mirror.contains(r.commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  document.addEventListener('selectionchange', () => {
+    if (!el.isConnected) return;
+    const s = preview ? '' : selectedInMirror();
+    hideSel.hidden = !s;
+    if (s) hideSel.textContent = `Hide “${s.length > 24 ? `${s.slice(0, 22)}…` : s}”`;
+  });
+  function hideSelection(): void {
+    const s = selectedInMirror();
+    if (!s) return;
+    const terms = host.terms();
+    if (!terms.some((t) => t.toLowerCase() === s.toLowerCase())) host.setTerms([...terms, s]);
+    kept.delete(s);
+    document.getSelection()?.removeAllRanges();
+    hideSel.hidden = true;
+    announce(`“${s}” will be hidden everywhere in this text.`);
     analyse();
-  }, 400));
-  reply.addEventListener('input', renderRestore);
+    copied = false;
+    render();
+  }
+
+  // ---- copy ------------------------------------------------------------------------------------
+  async function copySafe(): Promise<void> {
+    ensureFresh();
+    if (!safeText) return;
+    const ok = await copyText(safeText);
+    if (!ok) {
+      errorLine.textContent = 'Your browser didn’t allow copying. Click Preview, then select and copy the text.';
+      return;
+    }
+    copied = true;
+    editing = false;
+    announce('Copied. Now paste it anywhere.');
+    render();
+  }
+
+  async function copyRestored(): Promise<void> {
+    const out = restorePlaceholders(reply.value, mapping);
+    const ok = await copyText(out);
+    restoredCopy.textContent = ok ? '✓ Copied' : 'Copy failed';
+    setTimeout(() => (restoredCopy.textContent = 'Copy with my details'), 1800);
+  }
+
+  // ---- events ------------------------------------------------------------------------------------
+  const analyseSoon = debounce(() => {
+    analyse();
+  }, 150);
+  input.addEventListener('input', () => {
+    copied = false;
+    analyseSoon();
+  });
+  // Pasting is the main way in: show the highlighted view straight away.
+  input.addEventListener('paste', () =>
+    setTimeout(() => {
+      if (input.value) setEditing(false);
+    }, 0),
+  );
+  input.addEventListener('blur', () => {
+    if (input.value && editing) setEditing(false);
+  });
+  reply.addEventListener('input', () => (restoredCopy.disabled = !reply.value.trim()));
   mirror.addEventListener('click', (e) => {
+    if (selectedInMirror()) return; // finishing a selection, not a toggle
     const b = (e.target as Element).closest<HTMLElement>('.hl');
     const key = b?.dataset.key;
     if (key === undefined) return;
     if (kept.has(key)) kept.delete(key);
     else kept.add(key);
-    render();
+    changed();
     mirror.querySelector<HTMLElement>(`.hl[data-key="${CSS.escape(key)}"]`)?.focus();
   });
 
-  const title = h('h1', { class: 'text__title', id: 'text-title', tabindex: '-1' }, 'Redact text');
-
+  const title = h('h1', { class: 'sr-only', id: 'text-title', tabindex: '-1' }, 'Hide sensitive info in text');
   const el = h(
     'section',
     { class: 'screen textmode', 'aria-labelledby': 'text-title' },
@@ -211,55 +241,24 @@ export function createTextMode(host: TextHost, initial = ''): TextController {
       { class: 'text__bar' },
       h('button', { type: 'button', class: 'btn btn--quiet btn--back', onclick: () => host.back() }, 'Back'),
       title,
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'btn btn--quiet',
-          onclick: () => {
-            setText(SAMPLE_TEXT);
-            input.focus();
-          },
-        },
-        'Use sample text',
-      ),
+      h('div', { class: 'review__tools' }, hideSel, previewBtn),
     ),
+    h('div', { class: 'text__body' }, hint, box, errorLine),
     h(
       'div',
-      { class: 'text__grid' },
-      h(
-        'div',
-        { class: 'text__col' },
-        h('label', { for: 'text-in', class: 'field__label' }, 'Your text'),
-        input,
-        h('p', { class: 'field__hint', id: 'text-in-hint' }, 'Stays in this tab. Nothing is sent anywhere.'),
-        h('div', { class: 'field' }, h('label', { for: 'text-terms', class: 'field__label' }, 'Always hide…'), terms, h('p', { class: 'field__hint', id: 'text-terms-hint' }, 'Names, company, project — separated by commas.')),
-        h('h2', { class: 'text__h2' }, 'What we found'),
-        foundLine,
-        mirror,
-        errorLine,
-      ),
-      h(
-        'div',
-        { class: 'text__col' },
-        h(
-          'fieldset',
-          { class: 'seg' },
-          h('legend', { class: 'field__label' }, 'Output'),
-          h('div', { class: 'seg__opts' }, radio('redacted', 'Redacted'), radio('placeholders', 'Placeholders for AI chat')),
-        ),
-        modeExplain,
-        h('label', { for: 'text-out', class: 'sr-only' }, 'Safe version'),
-        output,
-        h('div', { class: 'row' }, copyBtn),
-        restoreBox,
-      ),
+      { class: 'text__actions' },
+      h('div', { class: 'text__actions-row' }, done, copyBtn),
+      restore,
+      h('p', { class: 'field__hint' }, 'Stays on your device. Nothing is sent anywhere. ', h('button', { type: 'button', class: 'linkbtn', onclick: () => setText(SAMPLE_TEXT) }, 'Try sample text')),
     ),
   );
 
   function setText(text: string): void {
     input.value = text;
     kept.clear();
+    copied = false;
+    editing = !text;
+    preview = false;
     analyse();
   }
 

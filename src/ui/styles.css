@@ -1300,3 +1300,72 @@ body[data-screen='text'] .foot {
     color: #fdba74;
   }
 }
+
+/* ---- text mode: one box ------------------------------------------------------------------- */
+.textmode {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+.text__bar .review__tools {
+  margin-left: auto;
+}
+.text__body .hint {
+  margin: 0 0 0.6rem;
+  min-height: 1.4em;
+}
+.textbox {
+  position: relative;
+}
+.textbox__input,
+.textbox__view {
+  width: 100%;
+  min-height: 16rem;
+  max-height: 60vh;
+}
+.textbox__view {
+  padding-top: 2.1rem; /* room for "Edit text" */
+}
+.textbox__edit {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.8rem;
+  font-size: 0.9rem;
+}
+.mirror.is-preview {
+  background: var(--surface);
+}
+.hl {
+  user-select: text; /* let people select across highlights to hide more */
+}
+.text__actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 1rem;
+  padding: 0.75rem 0 0.25rem;
+  background: var(--paper);
+}
+.text__actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+}
+.text__actions-row .done__title {
+  margin: 0 auto 0 0;
+}
+.restore {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.restore summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.restore .textarea {
+  width: 100%;
+  margin: 0.5rem 0;
+}
