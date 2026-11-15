@@ -33,6 +33,4 @@
 
 ## Links
 
-- [Website](https://redactpal.com): the tool, plus an FAQ.
-- [Source code and README](https://github.com/stefano2007517-star/redactpal): MIT license, architecture, self-hosting instructions.
-- [Architecture](https://github.com/stefano2007517-star/redactpal/blob/main/ARCHITECTURE.md): modules, detection rules, security model.
+(Generated at build time from content/pages and content/guides; see scripts/content/outputs.ts.)

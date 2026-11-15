@@ -1,7 +1,12 @@
 import { defineConfig, type Plugin } from 'vite';
-import { readdirSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { contentPlugin } from './scripts/content/vite-plugin.ts';
+
+const root = fileURLToPath(new URL('.', import.meta.url));
+const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string };
 
 /** Short commit id shown in the footer (Cloudflare Pages provides it; locally ask git). */
 function buildId(): string {
@@ -38,8 +43,19 @@ function precacheManifest(): Plugin {
         }
       };
       walk(outDir);
+      // Only the app itself: not the content pages (landing pages, guides and their images and
+      // stylesheet load normally online; the worker caches a page when it is visited).
       const skip = (f: string) =>
-        f.endsWith('.map') || f === 'sw.js' || f === 'precache.json' || f === '_headers' || f.includes('/LICENSES/') || f.endsWith('.txt');
+        f.endsWith('.map') ||
+        f === 'sw.js' ||
+        f === 'precache.json' ||
+        f === '_headers' ||
+        f.includes('/LICENSES/') ||
+        f.endsWith('.txt') ||
+        f.endsWith('.xml') ||
+        (f.endsWith('.html') && f !== 'index.html') ||
+        f.startsWith('guides/') ||
+        /^assets\/site-[\w-]+\.css$/.test(f);
       const core = files.filter((f) => f.startsWith('vendor/tesseract/core/'));
       const always = files.filter((f) => !skip(f) && !core.includes(f));
       writeFileSync(join(outDir, 'precache.json'), JSON.stringify({ always, core }, null, 1));
@@ -53,6 +69,6 @@ export default defineConfig({
   build: { target: 'es2022', sourcemap: true },
   worker: { format: 'es' },
   define: { __BUILD__: JSON.stringify(buildId()) },
-  plugins: [precacheManifest()],
+  plugins: [contentPlugin({ root, version: pkg.version }), precacheManifest()],
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 } as any);

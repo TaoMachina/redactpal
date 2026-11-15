@@ -674,6 +674,35 @@ function hasLetterAndDigit(v: string): boolean {
 // Rule table (order = tie-break priority)
 // ---------------------------------------------------------------------------------------------
 
+/** US ABA routing number checksum: 3·(d1+d4+d7) + 7·(d2+d5+d8) + (d3+d6+d9) ≡ 0 (mod 10). */
+function abaValid(d: string): boolean {
+  if (!/^\d{9}$/.test(d) || /^0{9}$/.test(d)) return false;
+  const n = [...d].map(Number);
+  return (3 * (n[0] + n[3] + n[6]) + 7 * (n[1] + n[4] + n[7]) + (n[2] + n[5] + n[8])) % 10 === 0;
+}
+
+const ACCOUNT_LABEL =
+  /(?<![\w])(?:account|acct\.?|a\/c)(?:\s*(?:number|num|no\.?|#))?\s*(?:[:#=]|is)?\s*((?:[*xX•·]{2,}\s?)?\d(?:[\d -]{2,22}\d))(?![\w-])/gid;
+const ROUTING_LABEL =
+  /(?<![\w])(?:routing|aba|rtn|transit)(?:\s*(?:number|num|no\.?|#))?\s*(?:[:#=]|is)?\s*(\d{9})(?![\w-])/gid;
+const SORT_CODE_LABEL = /(?<![\w])sort\s*code\s*(?:[:#=]|is)?\s*(\d{2}[- ]?\d{2}[- ]?\d{2})(?![\w-])/gid;
+
+function scanBankAccounts(text: string, emit: Emit): void {
+  eachMatch(ACCOUNT_LABEL, text, (m) => {
+    const sp = groupSpan(m, 1);
+    const digits = (m[1] ?? '').replace(/\D/g, '');
+    if (sp && digits.length >= 4 && digits.length <= 20) emit(sp[0], sp[1]);
+  });
+  eachMatch(ROUTING_LABEL, text, (m) => {
+    const sp = groupSpan(m, 1);
+    if (sp && abaValid(m[1])) emit(sp[0], sp[1]);
+  });
+  eachMatch(SORT_CODE_LABEL, text, (m) => {
+    const sp = groupSpan(m, 1);
+    if (sp) emit(sp[0], sp[1]);
+  });
+}
+
 export const RULE_DEFS: RuleDef[] = [
   {
     id: 'private_key',
@@ -862,6 +891,14 @@ export const RULE_DEFS: RuleDef[] = [
     description: 'International bank account numbers, validated by country length and mod-97.',
     confidence: 'high',
     scan: scanIban,
+  },
+  {
+    id: 'bank_account',
+    label: 'Bank account number',
+    kind: 'bank_account',
+    description: 'Numbers after an account / routing / sort-code label: "Account number 12345678", "Acct: ****1234", US ABA routing numbers (checksum-validated), UK sort codes.',
+    confidence: 'high',
+    scan: scanBankAccounts,
   },
   {
     id: 'auth_header',

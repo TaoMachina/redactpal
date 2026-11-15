@@ -15,6 +15,7 @@ const INFO: Record<RegionKind, KindInfo> = {
   phone: { short: 'Phone', plural: 'Phone numbers', tone: 'contact' },
   credit_card: { short: 'Card', plural: 'Card numbers', tone: 'money' },
   iban: { short: 'IBAN', plural: 'Bank accounts (IBAN)', tone: 'money' },
+  bank_account: { short: 'Account', plural: 'Bank account numbers', tone: 'money' },
   ssn: { short: 'SSN', plural: 'Social security numbers', tone: 'money' },
   ip_address: { short: 'IP', plural: 'IP addresses', tone: 'network' },
   mac_address: { short: 'MAC', plural: 'MAC addresses', tone: 'network' },

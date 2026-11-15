@@ -6,6 +6,7 @@ const PREFIX: Record<FindingKind, string> = {
   phone: 'PHONE',
   credit_card: 'CREDIT_CARD',
   iban: 'IBAN',
+  bank_account: 'ACCOUNT',
   ssn: 'SSN',
   ip_address: 'IP_ADDRESS',
   mac_address: 'MAC_ADDRESS',

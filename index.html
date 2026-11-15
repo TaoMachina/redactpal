@@ -5,25 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="no-referrer" />
-  <title>RedactPal — Redact screenshots, PDFs &amp; text before you share (free, private)</title>
-  <meta name="description" content="Free online redaction tool that runs in your browser. Black out emails, phone numbers, card numbers, API keys and names in screenshots, PDFs and text — nothing is uploaded. Open source." />
-  <link rel="canonical" href="https://redactpal.com/" />
-  <meta name="robots" content="index, follow" />
-  <!-- Link previews (iMessage, WhatsApp, Slack, X, LinkedIn…) -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="RedactPal" />
-  <meta property="og:url" content="https://redactpal.com/" />
-  <meta property="og:title" content="RedactPal — redact screenshots, PDFs &amp; text before you share" />
-  <meta property="og:description" content="Black out emails, phone numbers, card numbers and API keys. Free, open source, and nothing is uploaded — it runs in your browser." />
-  <meta property="og:image" content="https://redactpal.com/og.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="RedactPal: a document with an email, card number, phone number and API key blacked out" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="RedactPal — redact screenshots, PDFs &amp; text before you share" />
-  <meta name="twitter:description" content="Free, open source, and nothing is uploaded — it runs in your browser." />
-  <meta name="twitter:image" content="https://redactpal.com/og.png" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"RedactPal","url":"https://redactpal.com/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free in-browser tool to redact screenshots, PDFs and text before sharing. Detects emails, phone numbers, card numbers and API keys; nothing is uploaded.","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+  <!-- Template for the home page and every landing page (scripts/content/): the markers are filled
+       from content/pages/*.md at build time (title, description, link previews, structured data). -->
+  <!--rp:head-->
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#E8ECF1" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0F1318" media="(prefers-color-scheme: dark)" />
@@ -34,24 +18,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="RedactPal" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I redact a screenshot?","acceptedAnswer":{"@type":"Answer","text":"Open redactpal.com and paste the screenshot (Ctrl+V or ⌘V), drop it on the page, or tap “Choose a photo or PDF” on a phone. Emails, phone numbers, card numbers, API keys and other sensitive text are found and highlighted. Tap a highlight to keep it visible, drag over anything that was missed, then copy, share or save the image. The result has solid black boxes."}},{"@type":"Question","name":"How do I redact a PDF for free?","acceptedAnswer":{"@type":"Answer","text":"Drop the PDF on redactpal.com, check the highlighted items on every page, and download the redacted PDF. Each page is rebuilt from pixels, so text under a box can’t be copied out, and metadata such as author and title is removed. It’s free and needs no account."}},{"@type":"Question","name":"Is my file uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. RedactPal runs entirely in your browser: text recognition and detection happen on your device, and the page is blocked from connecting to other servers. After the first visit it even works offline. The code is open source, so anyone can check."}},{"@type":"Question","name":"Why not just blur or pixelate sensitive info?","acceptedAnswer":{"@type":"Answer","text":"Blurred and pixelated text can often be reconstructed. RedactPal only uses solid, opaque boxes, and re-encodes the image so nothing of the original survives under them."}},{"@type":"Question","name":"What does RedactPal detect automatically?","acceptedAnswer":{"@type":"Answer","text":"Email addresses, phone numbers, credit card numbers, IBANs, US Social Security numbers, IP addresses, passwords, JWTs and API keys from AWS, GitHub, GitLab, Slack, Stripe, OpenAI, Anthropic, Google and more. Names and addresses have no fixed format: draw a box over one once and RedactPal offers to hide it everywhere it appears."}},{"@type":"Question","name":"Can I redact text before pasting it into ChatGPT or another AI?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste the text and copy the safe version: sensitive values become placeholders like [EMAIL_1]. When the AI replies, paste the reply back and RedactPal puts your real details back in."}},{"@type":"Question","name":"Does it work on iPhone and Android?","acceptedAnswer":{"@type":"Answer","text":"Yes. Open redactpal.com in any mobile browser, pick a photo or PDF, and share the result. You can add it to your home screen, and on Android you can share a photo straight to RedactPal."}},{"@type":"Question","name":"Can my company use or self-host RedactPal?","acceptedAnswer":{"@type":"Answer","text":"Yes. RedactPal is MIT-licensed and is just static files, so it can be hosted on an internal server with no backend. Files never leave the device."}}]}</script>
 </head>
 <body>
-  <div id="app">
-    <noscript>RedactPal needs JavaScript to read your files locally. Nothing is uploaded.</noscript>
-  </div>
-  <!-- Static, crawlable answers to what people search for (shown below the tool on the start screen). -->
-  <section class="faq" aria-labelledby="faq-title">
-    <h2 id="faq-title">Redact screenshots, PDFs and text — questions</h2>
-      <details class="faq__item"><summary>How do I redact a screenshot?</summary><p>Open redactpal.com and paste the screenshot (Ctrl+V or ⌘V), drop it on the page, or tap “Choose a photo or PDF” on a phone. Emails, phone numbers, card numbers, API keys and other sensitive text are found and highlighted. Tap a highlight to keep it visible, drag over anything that was missed, then copy, share or save the image. The result has solid black boxes.</p></details>
-      <details class="faq__item"><summary>How do I redact a PDF for free?</summary><p>Drop the PDF on redactpal.com, check the highlighted items on every page, and download the redacted PDF. Each page is rebuilt from pixels, so text under a box can’t be copied out, and metadata such as author and title is removed. It’s free and needs no account.</p></details>
-      <details class="faq__item"><summary>Is my file uploaded anywhere?</summary><p>No. RedactPal runs entirely in your browser: text recognition and detection happen on your device, and the page is blocked from connecting to other servers. After the first visit it even works offline. The code is open source, so anyone can check.</p></details>
-      <details class="faq__item"><summary>Why not just blur or pixelate sensitive info?</summary><p>Blurred and pixelated text can often be reconstructed. RedactPal only uses solid, opaque boxes, and re-encodes the image so nothing of the original survives under them.</p></details>
-      <details class="faq__item"><summary>What does RedactPal detect automatically?</summary><p>Email addresses, phone numbers, credit card numbers, IBANs, US Social Security numbers, IP addresses, passwords, JWTs and API keys from AWS, GitHub, GitLab, Slack, Stripe, OpenAI, Anthropic, Google and more. Names and addresses have no fixed format: draw a box over one once and RedactPal offers to hide it everywhere it appears.</p></details>
-      <details class="faq__item"><summary>Can I redact text before pasting it into ChatGPT or another AI?</summary><p>Yes. Paste the text and copy the safe version: sensitive values become placeholders like [EMAIL_1]. When the AI replies, paste the reply back and RedactPal puts your real details back in.</p></details>
-      <details class="faq__item"><summary>Does it work on iPhone and Android?</summary><p>Yes. Open redactpal.com in any mobile browser, pick a photo or PDF, and share the result. You can add it to your home screen, and on Android you can share a photo straight to RedactPal.</p></details>
-      <details class="faq__item"><summary>Can my company use or self-host RedactPal?</summary><p>Yes. RedactPal is MIT-licensed and is just static files, so it can be hosted on an internal server with no backend. Files never leave the device.</p></details>
-  </section>
+  <!-- #app with a pre-rendered start screen (header, H1, intro); the app takes over on load. -->
+  <!--rp:app-->
+  <!-- Static, crawlable copy, FAQ and related links (start screen only), then the site footer. -->
+  <!--rp:below-->
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

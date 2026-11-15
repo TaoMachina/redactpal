@@ -29,6 +29,8 @@ src/pdf/              PDF analyse + flatten-export (browser)
 src/ui/, src/main.ts  app shell, input, review editor, export, text mode
 tests/                vitest unit tests (Node)
 scripts/              build helpers (e.g. copy vendor assets)
+scripts/content/      content build: Markdown pages and guides → static HTML, sitemap, llms files
+content/              site copy: home, landing pages, guides (see content/README.md)
 ```
 
 ### Data flow
@@ -65,6 +67,17 @@ OCR noise matters: rules should tolerate OCR's habit of inserting spaces around 
 - **Install link** (`src/ui/install.ts`): shown in the start screen's trust line only when the browser fired `beforeinstallprompt` (its mini-infobar is suppressed), or on iOS Safari as an inline "Add to Home Screen" explainer; hidden when already standalone. No popups, no auto-prompts.
 - Layout uses `env(safe-area-inset-*)` (masthead, review bar, action bar, panel, footer) and `100dvh` for the review app shell.
 - Tests: `tests/sw.test.ts` runs `public/sw.js` in a `node:vm` sandbox with fake Cache Storage; `tests/ui.pwa.test.ts` covers the share/install helpers.
+
+## Content pages (build time only)
+
+`scripts/content/vite-plugin.ts` turns `content/` into pages; the rest of `scripts/content/` is pure and unit-tested (`tests/content.test.ts`).
+
+- **App pages** (`content/pages/index.md` → `/`, `content/pages/<slug>.md` → `/<slug>/`): the built `index.html` is the template. Its three markers are filled per page: `<!--rp:head-->` (title, description, canonical, link previews, JSON-LD), `<!--rp:app-->` (`<div id="app">` with a pre-rendered start screen: header, H1, intro) and `<!--rp:below-->` (static copy, FAQ, related links, site footer). Pages in sub-folders get their asset paths rewritten (`./assets/` → `../assets/`) and `<html data-root="../">`, which `src/core/root.ts` uses to find `sw.js`, `precache.json` and `vendor/` (there is one service worker for the whole site). No Vite multi-page inputs: every app page shares the one bundle.
+- **The app and the pre-render**: `startApp` adopts the pre-rendered `[data-intro]` (H1 + intro) into the start screen instead of drawing its own, and reads `data-mode` (`text` opens text mode, which then shows the headline) and `data-accept` (`pdf` / `image` drop-zone wording and picker filter) via `src/ui/preset.ts`. The static parts below the tool show only while the page's first screen is up: `body:has(#app):not(:has(.screen.start, .screen.is-entry)) .page-extra { display: none }` (`src/ui/site.css`).
+- **Guides** (`content/guides/<slug>.md` → `/guides/<slug>/`, plus `/guides/`): static HTML with no script, one stylesheet (`src/ui/base.css` + `src/ui/site.css`, minified to `assets/site-<hash>.css`), and Article / BreadcrumbList (+ FAQPage / HowTo when given) JSON-LD.
+- **Generated files**: `sitemap.xml`, `llms.txt` (from `content/llms.txt`, "## Links" generated), `llms-full.txt`.
+- **Precache stays lean**: `dist/precache.json` lists only the app (root `index.html`, `assets/` except the guide stylesheet, `vendor/`, icons). Landing pages and guides load from the network; the worker keeps a page once it has been visited, and prunes it like any other stale entry.
+- **Dev**: the same plugin renders landing pages, guides, `/sitemap.xml` and the llms files on request (drafts included) and reloads on changes in `content/`.
 
 ## Security notes
 

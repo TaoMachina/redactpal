@@ -64,7 +64,8 @@ npm run dev        # http://localhost:5173
 npm test           # unit tests (vitest)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the module layout and design principles.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module layout and design principles. Landing pages and
+guides are Markdown files in `content/` — see [content/README.md](content/README.md).
 
 ## License
 

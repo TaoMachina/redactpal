@@ -1,0 +1,478 @@
+/* Site chrome and content pages: the masthead's nav, the static copy / FAQ / related links under
+   the tool, the site footer, and the guide articles. Shared by the app (via main.ts) and the
+   static guide pages (scripts/content/ emits base.css + this file as assets/site-<hash>.css). */
+
+/* ---- masthead nav ------------------------------------------------------------------------ */
+
+a.brand {
+  text-decoration: none;
+  border-radius: 6px;
+}
+.masthead__nav {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
+}
+.masthead__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.5rem;
+  margin-right: -0.5rem;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.masthead__nav a:hover,
+.masthead__nav a[aria-current='page'] {
+  color: var(--ink);
+}
+.masthead__nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* ---- what belongs to the page's first screen ---------------------------------------------- */
+/* The static copy, FAQ and related links (and the nav) show only on the page's own first screen:
+   the start screen, or text mode on a text landing page (.is-entry). Before the app runs, the
+   pre-rendered start screen is in the page, so all of it shows without JavaScript too. */
+html.is-app-shell .page-extra,
+html.is-app-shell .site-foot,
+body:has(#app):not(:has(.screen.start, .screen.is-entry)) .page-extra,
+body:has(#app):not(:has(.screen.start, .screen.is-entry)) .masthead__nav {
+  display: none;
+}
+
+/* Text mode opened directly (landing page): the page's headline sits above the box. */
+.textmode > .start__intro {
+  margin: 0.5rem 0 1.5rem;
+}
+.text__bar .text__other {
+  margin-left: -0.6rem;
+}
+
+/* ---- static content under the tool ---------------------------------------------------------- */
+
+.page-extra {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0.5rem var(--gutter-r) 0.5rem var(--gutter-l);
+}
+.page-copy {
+  margin: 0 0 2rem;
+}
+.prose--quiet {
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.prose--quiet h2,
+.prose--quiet h3 {
+  margin: 1.5rem 0 0.4rem;
+  color: var(--ink);
+  font: 600 1.05rem/1.3 var(--sans);
+}
+.prose--quiet > :first-child {
+  margin-top: 0;
+}
+.prose--quiet p,
+.prose--quiet ul,
+.prose--quiet ol {
+  margin: 0 0 0.8rem;
+}
+.prose--quiet strong {
+  color: var(--ink);
+}
+.prose--quiet a {
+  color: var(--tint);
+  text-underline-offset: 0.2em;
+}
+
+.faq {
+  margin: 0 0 2rem;
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+.faq h2 {
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+  font: 600 1.05rem/1.3 var(--sans);
+}
+.faq__item {
+  border-top: 1px solid var(--line);
+}
+.faq__item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.faq__item summary {
+  padding: 0.7rem 0;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.faq__item p {
+  margin: 0 0 0.9rem;
+  line-height: 1.55;
+}
+.faq__item a {
+  color: var(--tint);
+}
+
+.related {
+  margin: 0 0 2rem;
+}
+.related h2 {
+  margin: 0 0 0.6rem;
+  color: var(--ink);
+  font: 600 1.05rem/1.3 var(--sans);
+}
+.related__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+.related__list a {
+  color: var(--tint);
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+.related__list p {
+  margin: 0.15rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+/* ---- site footer ------------------------------------------------------------------------- */
+
+.site-foot {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.25rem var(--gutter-r) calc(1.75rem + var(--safe-bottom)) var(--gutter-l);
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+.site-foot__nav {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.site-foot__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+}
+.site-foot a {
+  color: var(--ink-2);
+  text-underline-offset: 0.2em;
+}
+.site-foot a:hover {
+  color: var(--ink);
+}
+.site-foot__meta {
+  margin: 0.9rem 0 0;
+}
+.site-foot__date {
+  white-space: nowrap;
+}
+
+/* ---- guide pages ------------------------------------------------------------------------- */
+
+.site-main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 var(--gutter-r) 2rem var(--gutter-l);
+}
+.crumbs ol {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.35rem;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+.crumbs li + li::before {
+  content: '/';
+  margin-right: 0.35rem;
+  opacity: 0.55;
+}
+.crumbs a {
+  color: var(--ink-2);
+  text-underline-offset: 0.2em;
+}
+.crumbs [aria-current] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.article__head {
+  margin: 1.5rem 0 1.75rem;
+}
+.article__title {
+  margin: 0;
+  font: 600 clamp(2rem, 6.5vw, 2.9rem) / 1.08 var(--serif);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.article__lede {
+  margin: 0.9rem 0 0;
+  max-width: 36rem;
+  font-size: 1.1rem;
+  color: var(--ink-2);
+}
+.dateline {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.toc {
+  margin: 0 0 2rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 0.95rem;
+}
+.toc__title {
+  margin: 0 0 0.4rem;
+  font-weight: 600;
+}
+.toc ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.toc li + li {
+  margin-top: 0.25rem;
+}
+.toc a {
+  color: var(--tint);
+  text-underline-offset: 0.2em;
+}
+
+.prose {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  overflow-wrap: break-word;
+}
+.prose p,
+.prose ul,
+.prose ol,
+.prose pre,
+.prose figure,
+.prose blockquote,
+.prose .table-wrap {
+  margin: 0 0 1.1em;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose h2,
+.article .faq h2,
+.howto h2 {
+  margin: 2.2rem 0 0.7rem;
+  color: var(--ink);
+  font: 600 1.55rem/1.2 var(--serif);
+  letter-spacing: -0.01em;
+}
+.prose h3 {
+  margin: 1.6rem 0 0.5rem;
+  font: 600 1.15rem/1.3 var(--sans);
+}
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 1rem;
+}
+.prose a {
+  color: var(--tint);
+  text-underline-offset: 0.18em;
+}
+.prose li + li {
+  margin-top: 0.3em;
+}
+.prose code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font: 0.88em var(--mono);
+}
+.prose pre {
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+.prose blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0 0 0 1.25rem;
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: 1.1rem;
+}
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.prose figure {
+  margin: 1.5em 0;
+}
+.prose figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+.prose hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.table-wrap {
+  overflow-x: auto;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.prose th,
+.prose td {
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.prose thead th {
+  border-bottom: 1.5px solid var(--ink-2);
+  font-weight: 600;
+}
+
+.howto {
+  margin: 0 0 1.5rem;
+}
+.howto__steps {
+  margin: 0;
+  padding-left: 1.3rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+.howto__steps li + li {
+  margin-top: 0.5rem;
+}
+
+.article .faq {
+  margin: 2.25rem 0 0;
+  font-size: 1rem;
+}
+.article .faq h2 {
+  margin-top: 0;
+}
+
+/* The call to action looks like the tool's drop zone: dashed tint border over a faint crosshatch. */
+.cta {
+  margin: 2.5rem 0 0;
+  padding: 1.5rem clamp(1.1rem, 4vw, 1.75rem);
+  border: 1.5px dashed color-mix(in srgb, var(--tint) 55%, transparent);
+  border-radius: 18px;
+  background-color: var(--surface);
+  background-image:
+    repeating-linear-gradient(45deg, var(--tint-pattern) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, var(--tint-pattern) 0 1px, transparent 1px 7px);
+}
+.prose .cta {
+  margin: 2rem 0;
+}
+.cta__title {
+  margin: 0;
+  font: 600 1.35rem/1.2 var(--serif);
+}
+.cta__text {
+  margin: 0.5rem 0 1.1rem;
+  max-width: 34rem;
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.cta__text a {
+  color: var(--tint);
+}
+.cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border-radius: 12px;
+  background: var(--btn);
+  color: var(--btn-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.prose .cta__btn {
+  color: var(--btn-ink);
+}
+.cta__btn:hover {
+  background: color-mix(in srgb, var(--btn) 86%, var(--tint));
+}
+
+.site-main .related {
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.guide-list li {
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line);
+}
+.guide-list li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.guide-list__title {
+  margin: 0;
+  font: 600 1.3rem/1.25 var(--serif);
+}
+.guide-list__title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.guide-list__title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.guide-list p {
+  margin: 0.35rem 0 0;
+  color: var(--ink-2);
+}
+.guide-list .dateline {
+  font-size: 0.85rem;
+}

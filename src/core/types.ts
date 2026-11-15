@@ -6,6 +6,7 @@ export type FindingKind =
   | 'phone'
   | 'credit_card'
   | 'iban'
+  | 'bank_account' // labelled account / routing numbers and sort codes
   | 'ssn'
   | 'ip_address'
   | 'mac_address'

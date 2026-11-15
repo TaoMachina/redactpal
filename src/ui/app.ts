@@ -5,10 +5,12 @@
 //
 // Only the shell, start screen and input handling are in the initial bundle. Everything heavy
 // (OCR, pdf.js, pdf-lib, detection, the editor) is loaded with import() when it is first needed.
+import { appRootUrl } from '../core/root';
 import { announce, errorMessage, h, svg } from './dom';
 import { classifyFile, unsupportedMessage } from './format';
 import { singleFlight, TimeoutError } from './guards';
 import { CLIPBOARD_TIMEOUT_MS, installGlobalInput, readClipboard } from './input';
+import { readPreset } from './preset';
 import { createProcessing } from './processing';
 import { discardShared, isShareLaunch, takeShared, withoutShareParam } from './share';
 import { createStart } from './start';
@@ -20,6 +22,8 @@ interface Screen {
   focus(): void;
   destroy?(): void;
   text?: TextController;
+  /** The page's own first screen (start, or text mode on a text landing page): gets no history entry. */
+  entry?: boolean;
 }
 
 const MARK =
@@ -43,12 +47,31 @@ export function startApp(mount: HTMLElement): void {
     return ++job;
   }
 
+  // Landing-page preset and pre-rendered headline (written by the content build, see scripts/content/).
+  const preset = readPreset(mount.dataset);
+  const intro = mount.querySelector<HTMLElement>('[data-intro]');
+  intro?.remove();
+
   const main = h('main', { class: 'main', id: 'main' });
+  const root = appRootUrl();
+  const leaveGuard = (e: MouseEvent) => {
+    const busy =
+      screen?.name === 'review' ||
+      screen?.name === 'processing' ||
+      (screen?.name === 'text' && !!screen.el.querySelector('textarea')?.value.trim());
+    if (busy && !confirm('Leave this page? Your file and changes will be lost.')) e.preventDefault();
+  };
   const shell = h(
     'div',
     { class: 'shell' },
     h('a', { class: 'skip', href: '#main' }, 'Skip to content'),
-    h('header', { class: 'masthead' }, h('span', { class: 'brand' }, svg(MARK), h('span', { class: 'brand__name' }, 'RedactPal'))),
+    // Same markup as the pre-rendered header (scripts/content/templates.ts masthead()).
+    h(
+      'header',
+      { class: 'masthead' },
+      h('a', { class: 'brand', href: root, 'aria-label': 'RedactPal home', onclick: leaveGuard }, svg(MARK), h('span', { class: 'brand__name' }, 'RedactPal')),
+      h('nav', { class: 'masthead__nav', 'aria-label': 'Site' }, h('a', { href: new URL('guides/', root).href, onclick: leaveGuard }, 'Guides')),
+    ),
     main,
     footer(),
     h('div', { class: 'drop-overlay', 'aria-hidden': 'true' }, h('p', null, 'Drop to redact. It stays on this device.')),
@@ -65,7 +88,7 @@ export function startApp(mount: HTMLElement): void {
     // scroll, so the document never shows a second scrollbar. Every other screen scrolls normally.
     document.documentElement.classList.toggle('is-app-shell', next.name === 'review');
     main.replaceChildren(next.el);
-    if (next.name !== 'start' && !history.state?.blot) history.pushState({ blot: true }, '');
+    if (next.name !== 'start' && !next.entry && !history.state?.blot) history.pushState({ blot: true }, '');
     window.scrollTo(0, 0);
     next.focus();
   }
@@ -77,7 +100,7 @@ export function startApp(mount: HTMLElement): void {
       onPasteButton: () => void pasteFromButton(),
       onText: () => void goText(''),
       onSample: () => void openSample(),
-    });
+    }, { accept: preset.accept, intro });
     show({ name: 'start', ...s });
   }
 
@@ -87,7 +110,8 @@ export function startApp(mount: HTMLElement): void {
     else goStart();
   }
 
-  async function goText(initial: string): Promise<void> {
+  /** `entry`: the page opens on text mode (landing-page preset), with the page's headline above the box. */
+  async function goText(initial: string, entry = false): Promise<void> {
     const id = nextJob();
     let mod: typeof import('./textmode');
     try {
@@ -96,8 +120,8 @@ export function startApp(mount: HTMLElement): void {
       return goError('Text mode couldn’t load', loadError(e));
     }
     if (id !== job) return;
-    const t = mod.createTextMode({ terms: () => terms, setTerms: (x) => (terms = x), back: startOver }, initial);
-    show({ name: 'text', el: t.el, focus: t.focus, text: t });
+    const t = mod.createTextMode({ terms: () => terms, setTerms: (x) => (terms = x), back: startOver }, initial, entry ? intro : null);
+    show({ name: 'text', el: t.el, focus: t.focus, text: t, entry });
   }
 
   function goError(title: string, detail: string): void {
@@ -269,7 +293,11 @@ export function startApp(mount: HTMLElement): void {
     goStart();
     void receiveShare();
   } else {
-    goStart();
+    if (preset.mode === 'text') {
+      // Keep the headline on screen while text mode loads (it is a separate chunk).
+      if (intro) main.replaceChildren(h('section', { class: 'screen start' }, intro));
+      void goText('', true);
+    } else goStart();
     // A share that was parked but never opened (e.g. the app failed to load) is not kept around.
     void discardShared();
   }

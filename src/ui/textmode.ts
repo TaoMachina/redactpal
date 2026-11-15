@@ -25,7 +25,11 @@ export interface TextController {
   setText(text: string): void;
 }
 
-export function createTextMode(host: TextHost, initial = ''): TextController {
+/**
+ * `intro`: on a landing page that opens in text mode, the page's pre-rendered headline (H1 + intro)
+ * is shown above the box and replaces the screen-reader-only title.
+ */
+export function createTextMode(host: TextHost, initial = '', intro?: HTMLElement | null): TextController {
   let findings: Finding[] = [];
   const kept = new Set<string>(); // values the user chose to keep visible
   let mapping: Record<string, string> = {};
@@ -232,15 +236,22 @@ export function createTextMode(host: TextHost, initial = ''): TextController {
     mirror.querySelector<HTMLElement>(`.hl[data-key="${CSS.escape(key)}"]`)?.focus();
   });
 
-  const title = h('h1', { class: 'sr-only', id: 'text-title', tabindex: '-1' }, 'Hide sensitive info in text');
+  const adopted = intro?.querySelector('h1') ?? null;
+  const title = adopted ?? h('h1', { class: 'sr-only', id: 'text-title', tabindex: '-1' }, 'Hide sensitive info in text');
+  title.id ||= 'text-title';
+  title.tabIndex = -1;
   const el = h(
     'section',
-    { class: 'screen textmode', 'aria-labelledby': 'text-title' },
+    { class: adopted ? 'screen textmode is-entry' : 'screen textmode', 'aria-labelledby': title.id },
+    adopted ? intro : null,
     h(
       'div',
       { class: 'text__bar' },
-      h('button', { type: 'button', class: 'btn btn--quiet btn--back', onclick: () => host.back() }, 'Back'),
-      title,
+      // Opened directly (landing page): there is nothing to go back to, so offer the other tool.
+      adopted
+        ? h('button', { type: 'button', class: 'btn btn--quiet text__other', onclick: () => host.back() }, 'Screenshot or PDF instead')
+        : h('button', { type: 'button', class: 'btn btn--quiet btn--back', onclick: () => host.back() }, 'Back'),
+      adopted ? null : title,
       h('div', { class: 'review__tools' }, hideSel, previewBtn),
     ),
     h('div', { class: 'text__body' }, hint, box, errorLine),

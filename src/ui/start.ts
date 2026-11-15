@@ -3,6 +3,7 @@ import { SOURCE_URL } from './config';
 import { h, isCoarsePointer } from './dom';
 import { pasteShortcut } from './format';
 import { createInstallLink } from './install';
+import { dropzoneCopy, type Accept } from './preset';
 
 export interface StartHandlers {
   onFile(file: File): void;
@@ -11,22 +12,33 @@ export interface StartHandlers {
   onSample(): void;
 }
 
+export interface StartOptions {
+  /** Landing-page preset: what the drop zone asks for. */
+  accept?: Accept;
+  /**
+   * Pre-rendered headline from the page's HTML (an element with an H1, see scripts/content/): used
+   * instead of the built-in one, so every page keeps its own crawlable H1 and intro.
+   */
+  intro?: HTMLElement | null;
+}
+
 export interface StartController {
   el: HTMLElement;
   focus(): void;
   destroy(): void;
 }
 
-export function createStart(on: StartHandlers): StartController {
+export function createStart(on: StartHandlers, opts: StartOptions = {}): StartController {
   const coarse = isCoarsePointer();
   const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.platform || navigator.userAgent;
   const key = pasteShortcut(platform);
+  const copy = dropzoneCopy(opts.accept ?? 'any', coarse, key);
 
   const fileInput = h('input', {
     type: 'file',
     id: 'file',
     class: 'sr-only',
-    accept: 'image/*,application/pdf,.pdf',
+    accept: copy.pickerAccept,
     tabindex: '-1',
     onchange: () => {
       const f = fileInput.files?.[0];
@@ -39,8 +51,20 @@ export function createStart(on: StartHandlers): StartController {
       fileInput.value = '';
     },
   });
-  const choose = h('button', { type: 'button', class: 'btn btn--primary btn--lg', onclick: () => fileInput.click() }, coarse ? 'Choose a photo or PDF' : 'Choose a file');
-  const title = h('h1', { class: 'start__title', id: 'start-title', tabindex: '-1' }, 'Hide sensitive info before you share.');
+  const choose = h('button', { type: 'button', class: 'btn btn--primary btn--lg', onclick: () => fileInput.click() }, copy.button);
+  const adopted = opts.intro?.querySelector('h1') ?? null;
+  const title = adopted ?? h('h1', { class: 'start__title', id: 'start-title', tabindex: '-1' }, 'Hide sensitive info before you share.');
+  title.id ||= 'start-title';
+  title.tabIndex = -1;
+  const intro =
+    adopted && opts.intro
+      ? opts.intro
+      : h(
+          'div',
+          { class: 'start__intro' },
+          title,
+          h('p', { class: 'start__lede' }, 'Redact screenshots, PDFs and text. Everything stays in your browser — nothing is uploaded.'),
+        );
 
   // The specimen: three "lines of a document", one of them already blotted out. Decorative.
   const specimen = h(
@@ -67,7 +91,7 @@ export function createStart(on: StartHandlers): StartController {
     h(
       'p',
       { class: coarse ? 'dropzone__title sr-only' : 'dropzone__title', id: 'dz-title' },
-      coarse ? 'Choose a screenshot, photo or PDF' : `Paste (${key}) or drop a screenshot, photo or PDF`,
+      copy.title,
     ),
     h(
       'div',
@@ -80,13 +104,8 @@ export function createStart(on: StartHandlers): StartController {
   const install = createInstallLink();
   const el = h(
     'section',
-    { class: 'screen start', 'aria-labelledby': 'start-title' },
-    h(
-      'div',
-      { class: 'start__intro' },
-      title,
-      h('p', { class: 'start__lede' }, 'Redact screenshots, PDFs and text. Everything stays in your browser — nothing is uploaded.'),
-    ),
+    { class: 'screen start', 'aria-labelledby': title.id },
+    intro,
     zone,
     fileInput,
     h(

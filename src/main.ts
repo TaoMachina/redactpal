@@ -1,5 +1,8 @@
 // App entry. Owner: ui agent.
+import './ui/base.css';
 import './ui/styles.css';
+import './ui/site.css';
+import { appRootUrl } from './core/root';
 import { startApp } from './ui/app';
 import { initInstall } from './ui/install';
 
@@ -27,8 +30,11 @@ async function pickTesseractCore(cores: string[]): Promise<string | undefined> {
 // Offline support: only in production builds (a service worker would fight Vite's dev server).
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // The worker and its file list live at the app root, also when this is a landing page in a
+    // sub-folder (/redact-pdf/): one worker, scoped to the whole app.
+    const root = appRootUrl();
     navigator.serviceWorker
-      .register('./sw.js')
+      .register(new URL('sw.js', root).href, { scope: root })
       .then(async () => {
         // On the very first visit the app's own files were fetched before the worker existed;
         // hand their URLs over so they are cached too.
@@ -42,9 +48,9 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
         // `prune`: this is the complete list, so once it is cached the worker deletes files left over
         // from earlier versions. Also kept: this page (how the app opens offline) and what it loaded
         // (so a tab still running an older version keeps working).
-        const list = (await (await fetch('./precache.json', { cache: 'no-cache' })).json()) as { always: string[]; core: string[] };
+        const list = (await (await fetch(new URL('precache.json', root), { cache: 'no-cache' })).json()) as { always: string[]; core: string[] };
         const core = await pickTesseractCore(list.core);
-        const rest = [...list.always, ...(core ? [core] : [])].map((f) => new URL(f, location.href).href);
+        const rest = [...list.always, ...(core ? [core] : [])].map((f) => new URL(f, root).href);
         reg.active?.postMessage({ type: 'cache', urls: rest, prune: true, page: location.href, keep: urls });
       })
       .catch(() => {
