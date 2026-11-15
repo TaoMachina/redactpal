@@ -6,7 +6,7 @@
 import type { Rect } from '../core/types';
 import { disposeDoc, metadataEntries, newRegionId, redetect, type ReviewDoc } from './doc';
 import { announce, errorMessage, h, isCoarsePointer, isEditable, svg } from './dom';
-import { enableTermRegions, suggestEverywhere, withoutTerm, withTerm, type Suggestion } from './everywhere';
+import { enableTermRegions, snapToWords, suggestEverywhere, withoutTerm, withTerm, type Suggestion } from './everywhere';
 import { canCopyImage, canShareFiles, copyPng, downloadBlob, shareFile } from './export';
 import { renderFindings } from './findings';
 import { countHidden, doneMessage, groupRegions, plural, redactedFilename, type FindingItem, type PlacedRegion } from './format';
@@ -90,9 +90,10 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
       st.selected = id;
       for (const v of views) v.refresh();
     },
-    create(pageIndex, rect: Rect) {
+    create(pageIndex, drawn: Rect) {
       const page = pageOf(pageIndex);
       if (!page) return;
+      const rect = snapToWords(page.tokens, drawn, page);
       const id = newRegionId('m');
       page.regions.push({ id, rect, kind: 'manual', label: 'Your box', text: '', enabled: true });
       st.selected = id;
@@ -217,7 +218,7 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
   }
 
   const closeButton = (): HTMLElement =>
-    h('button', { type: 'button', class: 'iconbtn everywhere__close', 'aria-label': 'Dismiss', title: 'Dismiss', onclick: () => dismissEvery() }, svg(CLOSE_ICON));
+    h('button', { type: 'button', class: 'iconbtn everywhere__close', 'aria-label': 'Just this one', title: 'Just this one', onclick: () => dismissEvery() }, svg(CLOSE_ICON));
 
   function offerEverywhere(pageIndex: number, rect: Rect, regionId: string): Suggestion | null {
     dismissEvery();

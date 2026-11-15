@@ -198,3 +198,27 @@ describe('everywhere: terms and regions', () => {
     expect(pages[1].regions[0].enabled).toBe(false);
   });
 });
+
+import { snapToWords } from '../src/ui/everywhere';
+
+describe('snapToWords', () => {
+  const bounds = { width: 1000, height: 500 };
+  const word = (text: string, x: number, w: number) => ({ text, line: 0, box: { x, y: 100, w, h: 20 } });
+  it('grows a box over the back half of a word to the whole word', () => {
+    const tokens = [word('Trainor', 100, 80), word('said', 200, 40)];
+    const r = snapToWords(tokens, { x: 140, y: 98, w: 45, h: 24 }, bounds);
+    expect(r.x).toBeLessThanOrEqual(100);
+    expect(r.x + r.w).toBeGreaterThanOrEqual(180);
+    expect(r.x + r.w).toBeLessThan(200); // does not grab the next word
+  });
+  it('leaves a box over empty space alone', () => {
+    const tokens = [word('Trainor', 100, 80)];
+    const drawn = { x: 400, y: 300, w: 50, h: 30 };
+    expect(snapToWords(tokens, drawn, bounds)).toEqual(drawn);
+  });
+  it('ignores a word only grazed by the box', () => {
+    const tokens = [word('Trainor', 100, 80)];
+    const drawn = { x: 170, y: 98, w: 60, h: 24 }; // covers ~12% of the word
+    expect(snapToWords(tokens, drawn, bounds)).toEqual(drawn);
+  });
+});

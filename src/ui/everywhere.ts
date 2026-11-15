@@ -1,7 +1,7 @@
 // "Drag → hide everywhere": when the user draws a box over some text, find what that text says and
 // how many other times it appears, so the review screen can offer to hide every occurrence (as a
 // custom term). Pure: no DOM; works on tokens and regions only.
-import { buildLayout, subTokenRect } from '../core/layout';
+import { buildLayout, padRect, subTokenRect, unionRect } from '../core/layout';
 import type { Rect, Region, Token } from '../core/types';
 import { customTermRegex } from '../detect';
 import { rectArea } from './geometry';
@@ -46,6 +46,24 @@ export function tokensUnderRect(tokens: readonly Token[], rect: Rect, minCover =
   tokens.forEach((t, i) => {
     if (t.text.trim() && coverage(t.box, rect) >= minCover) out.push(i);
   });
+  return out;
+}
+
+/** A drawn box covering at least this share of a word is taken to mean "that word". */
+export const SNAP_COVER = 0.3;
+
+/**
+ * People drag over words, not rectangles: if the drawn box covers a good part of a word, grow it to
+ * cover the whole word (with the same margin detected boxes get). Avoids half-hidden words (a leak)
+ * and keeps a later "Hide all" box exactly on top of it instead of overlapping it.
+ * Returns the drawn rect unchanged when it covers no text.
+ */
+export function snapToWords(tokens: readonly Token[], rect: Rect, bounds: { width: number; height: number }): Rect {
+  let out = rect;
+  for (const i of tokensUnderRect(tokens, rect, SNAP_COVER)) {
+    const b = tokens[i].box;
+    out = unionRect(out, padRect(b, Math.max(2, b.h * 0.15), bounds));
+  }
   return out;
 }
 
