@@ -3,6 +3,7 @@ import { SOURCE_URL } from './config';
 import { h, isCoarsePointer } from './dom';
 import { pasteShortcut } from './format';
 import { canReadClipboard } from './input';
+import { createInstallLink } from './install';
 
 export interface StartHandlers {
   onFile(file: File): void;
@@ -14,6 +15,7 @@ export interface StartHandlers {
 export interface StartController {
   el: HTMLElement;
   focus(): void;
+  destroy(): void;
 }
 
 export function createStart(on: StartHandlers): StartController {
@@ -71,6 +73,7 @@ export function createStart(on: StartHandlers): StartController {
     h('p', { class: 'dropzone__sub' }, 'Screenshots and photos (PNG, JPG, WebP) or PDF'),
   );
 
+  const install = createInstallLink();
   const el = h(
     'section',
     { class: 'screen start', 'aria-labelledby': 'start-title' },
@@ -93,8 +96,9 @@ export function createStart(on: StartHandlers): StartController {
       { class: 'trust' },
       'Runs on your device. Turn off Wi-Fi and it still works. ',
       SOURCE_URL ? h('a', { href: SOURCE_URL, rel: 'noopener' }, 'Open source (MIT)') : h('span', null, 'Open source (MIT).'),
+      install.el,
     ),
   );
 
-  return { el, focus: () => title.focus({ preventScroll: true }) };
+  return { el, focus: () => title.focus({ preventScroll: true }), destroy: install.destroy };
 }

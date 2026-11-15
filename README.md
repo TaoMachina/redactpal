@@ -13,6 +13,20 @@ Everything runs on your device. Nothing is uploaded. Turn off Wi-Fi and it still
 
 Text works too: paste text to get a redacted copy, or a *placeholder* version to send to an AI chat — then paste the AI's reply back to restore your real values.
 
+## On your phone
+
+Just open the site in your phone's browser — nothing to set up. Tap **Choose a photo or file**, pick a screenshot or PDF, then **Share** the safe version straight to your chat or mail app.
+
+## Install it
+
+Optional, but handy: Blot then opens from your home screen like any other app, full screen.
+
+- **Android (Chrome, Edge, Samsung Internet):** tap **Install app** under the start screen (or *Install* in the browser menu). After that, Blot appears in your share sheet: in your gallery or files app, tap **Share → Blot** on a photo or PDF and it opens ready to check.
+- **iPhone / iPad (Safari):** tap **Add to Home Screen** under the start screen for the two steps — the **Share** button, then *Add to Home Screen*.
+- **Computer (Chrome, Edge):** the **Install app** link, or the install icon in the address bar.
+
+It works offline after the first time you open it, and updates itself automatically the next time you are online. Installing changes nothing about privacy: your files still never leave the device.
+
 ## Why you can trust it
 
 - **No uploads, no tracking, no third-party requests.** All code and the OCR engine are served from the same origin; a strict Content-Security-Policy blocks connections elsewhere.

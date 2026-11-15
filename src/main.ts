@@ -1,6 +1,10 @@
 // App entry. Owner: ui agent.
 import './ui/styles.css';
 import { startApp } from './ui/app';
+import { initInstall } from './ui/install';
+
+// Listen for the browser's "this can be installed" signal before it can fire (see ui/install.ts).
+initInstall();
 
 const mount = document.getElementById('app');
 if (mount) startApp(mount);
@@ -35,10 +39,13 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
         reg.active?.postMessage({ type: 'cache', urls });
         // Then fetch everything else (OCR engine, PDF reader…) in the background, so the app keeps
         // working offline even for features not used yet. Only the OCR core this CPU will load.
-        const list = (await (await fetch('./precache.json')).json()) as { always: string[]; core: string[] };
+        // `prune`: this is the complete list, so once it is cached the worker deletes files left over
+        // from earlier versions. Also kept: this page (how the app opens offline) and what it loaded
+        // (so a tab still running an older version keeps working).
+        const list = (await (await fetch('./precache.json', { cache: 'no-cache' })).json()) as { always: string[]; core: string[] };
         const core = await pickTesseractCore(list.core);
         const rest = [...list.always, ...(core ? [core] : [])].map((f) => new URL(f, location.href).href);
-        reg.active?.postMessage({ type: 'cache', urls: rest });
+        reg.active?.postMessage({ type: 'cache', urls: rest, prune: true, page: location.href, keep: urls });
       })
       .catch(() => {
         /* offline support is a bonus; the app works without it */

@@ -9,6 +9,7 @@ import { announce, errorMessage, h, svg } from './dom';
 import { classifyFile, unsupportedMessage } from './format';
 import { installGlobalInput, readClipboard } from './input';
 import { createProcessing } from './processing';
+import { discardShared, isShareLaunch, takeShared, withoutShareParam } from './share';
 import { createStart } from './start';
 import type { TextController } from './textmode';
 
@@ -221,7 +222,26 @@ export function startApp(mount: HTMLElement): void {
     if (screen && screen.name !== 'start') goStart();
   });
 
-  goStart();
+  // ---- launched from the share sheet (Android, installed app) -------------------------------
+  // public/sw.js parked the shared file/text and redirected to ./?shared=1. Take it (which deletes
+  // it), tidy the address, and carry on exactly as if it had been chosen here.
+  async function receiveShare(): Promise<void> {
+    const item = await takeShared();
+    if (!item) return; // nothing arrived: the start screen is already showing
+    if (screen?.name !== 'start') return; // the user already picked something else meanwhile
+    if (item.kind === 'file') void openFile(item.file);
+    else void goText(item.text);
+  }
+
+  if (isShareLaunch(location.search)) {
+    history.replaceState(history.state, '', withoutShareParam(location.href));
+    goStart();
+    void receiveShare();
+  } else {
+    goStart();
+    // A share that was parked but never opened (e.g. the app failed to load) is not kept around.
+    void discardShared();
+  }
 }
 
 function isAbortError(e: unknown): boolean {

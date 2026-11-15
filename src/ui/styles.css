@@ -32,6 +32,13 @@
   --bar-h: 3.75rem;
   --head-h: 3.5rem;
 
+  /* Notches, rounded corners and home indicators (viewport-fit=cover; mostly matters when Blot runs
+     as an installed app or in landscape). Side gutters never shrink below --gutter. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gutter-l: max(var(--gutter), env(safe-area-inset-left, 0px));
+  --gutter-r: max(var(--gutter), env(safe-area-inset-right, 0px));
+
   color-scheme: light dark;
 }
 
@@ -69,6 +76,7 @@ body {
   color: var(--ink);
   font: 400 1rem/1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -154,21 +162,25 @@ html.is-app-shell .main {
 html.is-app-shell .foot {
   display: none;
 }
-/* Landscape phones: every pixel of height goes to the page. */
+/* Landscape phones: every pixel of height goes to the page. The review bar then sits at the very
+   top, so it takes over the masthead's safe-area padding. */
 @media (max-height: 520px) {
   html.is-app-shell .masthead {
     display: none;
   }
+  html.is-app-shell .review__bar {
+    padding-top: calc(0.5rem + var(--safe-top));
+  }
 }
 
 .masthead {
-  height: var(--head-h);
+  height: calc(var(--head-h) + var(--safe-top));
   display: flex;
   align-items: center;
   width: 100%;
   max-width: 44rem;
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: var(--safe-top) var(--gutter-r) 0 var(--gutter-l);
 }
 
 .brand {
@@ -190,7 +202,7 @@ html.is-app-shell .foot {
   width: 100%;
   max-width: 44rem;
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 0 var(--gutter-r) 0 var(--gutter-l);
 }
 
 body[data-screen='review'] .masthead,
@@ -568,7 +580,7 @@ body.is-dragging .drop-overlay {
   align-items: center;
   gap: 0.5rem 0.75rem;
   min-height: var(--bar-h);
-  padding: 0.5rem var(--gutter);
+  padding: 0.5rem var(--gutter-r) 0.5rem var(--gutter-l);
   border-bottom: 1px solid var(--line);
   border-top: 1px solid var(--line);
   background: var(--surface);
@@ -596,7 +608,7 @@ body.is-dragging .drop-overlay {
 }
 
 .stage {
-  padding: 1rem var(--gutter) 2rem;
+  padding: 1rem var(--gutter-r) 2rem var(--gutter-l);
 }
 
 .notice {
@@ -861,7 +873,7 @@ body.is-dragging .drop-overlay {
   max-height: 72%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0.75rem var(--gutter) 1.25rem;
+  padding: 0.75rem var(--gutter-r) 1.25rem var(--gutter-l);
   background: var(--surface);
   border-top: 1px solid var(--line);
   border-radius: 16px 16px 0 0;
@@ -1119,7 +1131,7 @@ body.is-dragging .drop-overlay {
 /* Action bar: disclosure on the left, one outcome button on the right. */
 .actions {
   flex: none;
-  padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom));
+  padding: 0.6rem var(--gutter-r) calc(0.6rem + var(--safe-bottom)) var(--gutter-l);
   border-top: 1px solid var(--line);
   background: var(--surface);
 }
@@ -1430,7 +1442,7 @@ body.is-dragging .drop-overlay {
   width: 100%;
   max-width: 44rem;
   margin: 2rem auto 0;
-  padding: 1.25rem var(--gutter) calc(1.5rem + env(safe-area-inset-bottom));
+  padding: 1.25rem var(--gutter-r) calc(1.5rem + var(--safe-bottom)) var(--gutter-l);
   font-size: 0.88rem;
   color: var(--ink-2);
 }
@@ -1447,6 +1459,27 @@ body[data-screen='text'] .foot {
 .trust a {
   color: var(--tint);
   text-underline-offset: 0.2em;
+}
+/* "Install app" / "Add to Home Screen": as quiet as the rest of the line (see install.ts). */
+.install__link {
+  min-height: 0;
+  padding: 0;
+  font-size: inherit;
+}
+.install__how {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--ink);
+}
+.install__icon {
+  display: inline-block;
+  vertical-align: -0.2em;
+  color: var(--tint);
+}
+@media (pointer: coarse) {
+  .install__link {
+    padding: 0.4rem 0; /* easier to tap without changing the line's look */
+  }
 }
 .how summary {
   display: inline-block;
@@ -1537,7 +1570,7 @@ body[data-screen='text'] .foot {
   position: sticky;
   bottom: 0;
   margin-top: 1rem;
-  padding: 0.75rem 0 0.25rem;
+  padding: 0.75rem 0 calc(0.25rem + var(--safe-bottom));
   background: var(--paper);
 }
 .text__actions-row {
