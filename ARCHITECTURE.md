@@ -1,0 +1,64 @@
+# Blot — architecture
+
+**One-liner:** drop a screenshot, PDF or text in → sensitive stuff is found and blacked out → copy/download the safe version. Everything happens in your browser. Nothing is uploaded.
+
+## Product principles (acceptance criteria)
+
+1. **Zero friction.** Open the page → paste (Ctrl/⌘+V), drop, or pick a file. No sign-up, no install, no settings needed. Works on a phone (file picker / share) and desktop.
+2. **Truly safe output.** Redaction = opaque solid fill, never blur/pixelate (those are reversible). Output files are re-encoded from pixels: no EXIF/GPS, no hidden text under boxes, no PDF metadata/annotations/attachments. If we can't guarantee it, we say so.
+3. **Human in the loop.** Auto-detection proposes; the user sees every box, can toggle any off, and draw extra boxes. Detection misses are expected — the UI must make "add a box" obvious.
+4. **Verifiably local.** All code + models are served from our own origin (no CDNs, no analytics). A strict CSP forbids third-party connections. Works offline after first load.
+5. **Anyone may use it.** MIT license. Static files only, so a company can host it internally by copying `dist/`.
+
+## Stack
+
+- Vite + TypeScript, **vanilla DOM** (no UI framework) to keep the bundle and the contribution barrier small.
+- OCR: `tesseract.js` v7 with worker/core/traineddata copied into `public/vendor/` at build time (never fetched from a CDN).
+- PDF read/render: `pdfjs-dist`. PDF write: `pdf-lib`.
+- Detection: hand-written rules (regex + validators such as Luhn, IBAN mod-97, entropy). No ML model in the MVP.
+  Optional future "deep scan" with OpenAI Privacy Filter (~0.8 GB, WebGPU) for names/addresses — opt-in only.
+
+## Modules and ownership
+
+```
+src/core/types.ts     shared contracts (Finding, Token, Rect, Region, PageAnalysis)   — do not change casually
+src/core/layout.ts    tokens -> text, finding spans -> rectangles                      — shared
+src/detect/           detection engine (pure TS, unit-tested in Node)
+src/image/            OCR + image export (browser)
+src/pdf/              PDF analyse + flatten-export (browser)
+src/ui/, src/main.ts  app shell, input, review editor, export, text mode
+tests/                vitest unit tests (Node)
+scripts/              build helpers (e.g. copy vendor assets)
+```
+
+### Data flow
+
+```
+image  ─decode─► ImageBitmap ─ocr()─► Token[] ─buildLayout()─► text ─detect()─► Finding[]
+                                                                         └─findingsToRegions()─► Region[]
+pdf    ─pdf.js─► per page: text items → Token[] (or OCR if scanned) ─► same as above
+text   ─────────────────────────────────────────────────────────────► detect() ─► redactText / applyPlaceholders
+
+Review UI: user toggles / adds / removes Regions.
+Export:    image → exportRedactedImage (PNG)   pdf → exportRedactedPdf (every page flattened to an image)
+           text  → copy redacted text, or placeholder text + local mapping to restore an AI reply later
+```
+
+### Coordinate spaces
+
+`Rect` is always in **source units**: natural image pixels, or PDF page CSS px at pdf.js viewport scale 1 (top-left origin). The UI scales for display; exporters scale for output.
+
+## Detection rules (MVP)
+
+High confidence, validated: email; credit card (Luhn, 13–19 digits, common separators); IBAN (mod-97); private key blocks; JWT (3 base64url parts, header decodes to JSON with "alg"); provider keys/tokens — AWS access key id, GitHub (ghp_/gho_/ghs_/ghu_/github_pat_), GitLab (glpat-), Slack (xox[abprs]-, hooks.slack.com URLs), Stripe (sk_live_/rk_live_/pk_live_ and _test_), OpenAI (sk-…, sk-proj-…), Anthropic (sk-ant-…), Google API key (AIza…), Twilio, SendGrid (SG.), npm (npm_), Discord bot tokens, Hugging Face (hf_); URLs with credentials (`user:pass@`, `?token=|key=|secret=|sig=|access_token=` …).
+Medium: phone numbers (international formats, ≥ 8 digits, not dates/versions); IPv4 (valid octets, skip 0.0.0.0/127.0.0.1? → keep but low), IPv6; MAC; US SSN (excluding invalid ranges); password/secret assignments (`password: x`, `pwd=`, `"apiKey": "…"`, `Authorization: Bearer …`); high-entropy strings assigned to key/token/secret names.
+Low: crypto addresses (BTC bech32/base58, ETH 0x…40 hex).
+Custom terms: user-provided words/phrases (names, company, project codenames) — case-insensitive.
+
+OCR noise matters: rules should tolerate OCR's habit of inserting spaces around `@`, `.`, `:` and confusing O/0, l/1 only where it is cheap and safe (prefer over-detection for secrets).
+
+## Security notes
+
+- CSP (meta tag): `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'`.
+- No `localStorage` of file contents. Placeholder mappings for text mode live in memory only (with an explicit "save mapping" download if the user wants it).
+- Clipboard writes only on explicit user action.

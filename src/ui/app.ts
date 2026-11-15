@@ -1,0 +1,264 @@
+// App shell and screen state machine:
+//   start ──file/paste/sample──► processing ──ok──► review ──Start over──► start
+//     │                              └─error──► error ──Try another file──► start
+//     └──Paste text instead / pasted text──► text ──Back──► start
+//
+// Only the shell, start screen and input handling are in the initial bundle. Everything heavy
+// (OCR, pdf.js, pdf-lib, detection, the editor) is loaded with import() when it is first needed.
+import { announce, errorMessage, h, svg } from './dom';
+import { classifyFile, unsupportedMessage } from './format';
+import { installGlobalInput, readClipboard } from './input';
+import { createProcessing } from './processing';
+import { createStart } from './start';
+import type { TextController } from './textmode';
+
+interface Screen {
+  name: 'start' | 'processing' | 'review' | 'text' | 'error';
+  el: HTMLElement;
+  focus(): void;
+  destroy?(): void;
+  text?: TextController;
+}
+
+const MARK =
+  '<svg class="brand__mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="3" y="7" width="26" height="4" rx="1.5" fill="currentColor" opacity=".35"/><rect x="3" y="14" width="18" height="6" rx="1" fill="currentColor"/><rect x="3" y="23" width="21" height="4" rx="1.5" fill="currentColor" opacity=".35"/></svg>';
+
+export function startApp(mount: HTMLElement): void {
+  let terms: string[] = []; // "Always hide…" — memory only, never persisted
+  let screen: Screen | null = null;
+  let job = 0; // increments to invalidate in-flight analyses (Cancel)
+  let running: AbortController | null = null; // aborts the in-flight PDF analysis
+
+  /** Start a new job: invalidates (and aborts) whatever was running. */
+  function nextJob(): number {
+    running?.abort();
+    running = null;
+    return ++job;
+  }
+
+  const main = h('main', { class: 'main', id: 'main' });
+  const shell = h(
+    'div',
+    { class: 'shell' },
+    h('a', { class: 'skip', href: '#main' }, 'Skip to content'),
+    h('header', { class: 'masthead' }, h('span', { class: 'brand' }, svg(MARK), h('span', { class: 'brand__name' }, 'Blot'))),
+    main,
+    footer(),
+    h('div', { class: 'drop-overlay', 'aria-hidden': 'true' }, h('p', null, 'Drop to redact. It stays on this device.')),
+  );
+  mount.replaceChildren(shell);
+
+  // ---- screens -----------------------------------------------------------------------------
+
+  function show(next: Screen): void {
+    screen?.destroy?.();
+    screen = next;
+    document.body.dataset.screen = next.name;
+    main.replaceChildren(next.el);
+    if (next.name !== 'start' && !history.state?.blot) history.pushState({ blot: true }, '');
+    window.scrollTo(0, 0);
+    next.focus();
+  }
+
+  function goStart(): void {
+    nextJob();
+    const s = createStart({
+      onFile: (f) => openFile(f),
+      onPasteButton: () => void pasteFromButton(),
+      onText: () => void goText(''),
+      onSample: () => void openSample(),
+    });
+    show({ name: 'start', ...s });
+  }
+
+  /** "Start over" buttons: unwind our history entry so the phone back button stays sensible. */
+  function startOver(): void {
+    if (history.state?.blot) history.back();
+    else goStart();
+  }
+
+  async function goText(initial: string): Promise<void> {
+    const id = nextJob();
+    let mod: typeof import('./textmode');
+    try {
+      mod = await import('./textmode');
+    } catch (e) {
+      return goError('Text mode couldn’t load', loadError(e));
+    }
+    if (id !== job) return;
+    const t = mod.createTextMode({ terms: () => terms, setTerms: (x) => (terms = x), back: startOver }, initial);
+    show({ name: 'text', el: t.el, focus: t.focus, text: t });
+  }
+
+  function goError(title: string, detail: string): void {
+    const heading = h('h1', { class: 'error__title', id: 'err-title', tabindex: '-1' }, title);
+    const el = h(
+      'section',
+      { class: 'screen error', 'aria-labelledby': 'err-title' },
+      h(
+        'div',
+        { class: 'error__card', role: 'alert' },
+        heading,
+        h('p', { class: 'error__detail' }, detail),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'btn btn--primary',
+            onclick: () => {
+              goStart();
+              // Still inside the click, so the file picker is allowed to open.
+              (document.getElementById('file') as HTMLInputElement | null)?.click();
+            },
+          },
+          'Try another file',
+        ),
+        h('button', { type: 'button', class: 'btn btn--quiet', onclick: startOver }, 'Back to start'),
+      ),
+    );
+    show({ name: 'error', el, focus: () => heading.focus({ preventScroll: true }) });
+  }
+
+  // ---- flows -------------------------------------------------------------------------------
+
+  async function openFile(file: File): Promise<void> {
+    const kind = classifyFile(file);
+    if (kind === 'unsupported') return goError('This file type isn’t supported', unsupportedMessage(file));
+    if (kind === 'text') {
+      try {
+        return void goText(await file.text());
+      } catch (e) {
+        return goError('We couldn’t read this file', errorMessage(e));
+      }
+    }
+
+    const id = nextJob();
+    const ac = new AbortController();
+    running = ac;
+    const isPdf = kind === 'pdf';
+    const p = createProcessing({
+      title: isPdf ? 'Reading your PDF' : 'Reading your image',
+      detail: 'Finding text and anything sensitive. This happens on your device.',
+      onCancel: () => startOver(),
+    });
+    show({ name: 'processing', ...p });
+    const onProgress = (f: number, msg?: string) => id === job && p.update(f, msg);
+
+    try {
+      const opts = { customTerms: terms };
+      onProgress(0, 'Loading the reader…');
+      const [{ docFromImage, docFromPdf }, { createReview }] = await Promise.all([import('./doc'), import('./review')]);
+      let doc;
+      if (isPdf) {
+        const pdf = await import('../pdf');
+        doc = docFromPdf(await pdf.analyzePdf(file, { ...opts, signal: ac.signal }, onProgress), file.name, pdf.exportRedactedPdf);
+      } else {
+        const img = await import('../image');
+        doc = docFromImage(await img.analyzeImage(file, opts, onProgress), file.name, img.exportRedactedImage);
+      }
+      if (id !== job) {
+        // Cancelled while working: release what we got.
+        doc.image?.bitmap.close();
+        doc.pdf?.dispose();
+        return;
+      }
+      const r = createReview(doc, { terms: () => terms, setTerms: (x) => (terms = x), startOver });
+      show({ name: 'review', ...r });
+      const n = doc.pages.reduce((s, pg) => s + new Set(pg.regions.map((r) => r.findingId ?? r.id)).size, 0);
+      const unread = doc.pages.some((pg) => pg.warning);
+      announce(
+        n
+          ? `Found ${n} thing${n === 1 ? '' : 's'} to hide. Review them before sharing.${unread ? ' Some of it couldn’t be read automatically — check it and draw boxes by hand.' : ''}`
+          : unread
+            ? 'Some of it couldn’t be read automatically. Check it and draw boxes over anything you want hidden.'
+            : 'Nothing sensitive found. You can draw boxes yourself.',
+      );
+    } catch (e) {
+      if (id !== job || isAbortError(e)) return;
+      goError(isPdf ? 'We couldn’t open this PDF' : 'We couldn’t open this image', friendly(e, isPdf));
+    }
+  }
+
+  async function openSample(): Promise<void> {
+    try {
+      const { createSampleScreenshot } = await import('./sample');
+      await openFile(await createSampleScreenshot());
+    } catch (e) {
+      goError('The sample couldn’t be created', errorMessage(e));
+    }
+  }
+
+  async function pasteFromButton(): Promise<void> {
+    try {
+      const r = await readClipboard();
+      if (r.file) return openFile(r.file);
+      if (r.text?.trim()) return void goText(r.text);
+      announce('The clipboard is empty.');
+    } catch {
+      announce('Your browser didn’t allow reading the clipboard. Choose a file instead.');
+    }
+  }
+
+  // ---- global input ------------------------------------------------------------------------
+
+  installGlobalInput({
+    onFiles(files) {
+      if (screen?.name === 'processing') return announce('Still working on the previous file.');
+      if (screen?.name === 'review' && !confirm('Open the new file? Your changes to the current one will be lost.')) return;
+      if (files.length > 1) announce('Opened the first file only.');
+      void openFile(files[0]);
+    },
+    onText(text) {
+      if (screen?.name === 'text') return screen.text?.setText(text);
+      if (screen?.name === 'start' || screen?.name === 'error') void goText(text);
+    },
+  });
+
+  window.addEventListener('popstate', () => {
+    if (screen && screen.name !== 'start') goStart();
+  });
+
+  goStart();
+}
+
+function isAbortError(e: unknown): boolean {
+  return (e as { name?: string } | null)?.name === 'AbortError';
+}
+
+function loadError(e: unknown): string {
+  return /fetch|import|module/i.test(errorMessage(e))
+    ? 'Part of the app couldn’t be loaded. Check your connection once, reload, and it will be kept for offline use.'
+    : errorMessage(e);
+}
+
+function friendly(e: unknown, isPdf: boolean): string {
+  if (/dynamically imported module|Importing a module script failed|error loading/i.test(errorMessage(e))) return loadError(e);
+  const msg = errorMessage(e);
+  if (/password|encrypt/i.test(msg)) return 'This PDF is password-protected. Open it, print or save it without a password, and try again.';
+  if (/decode|bitmap|source image|InvalidStateError|could not be decoded/i.test(msg))
+    return 'This image format couldn’t be opened in your browser. Try a PNG or JPG, or take a screenshot of it.';
+  if (/invalid pdf|pdf structure|InvalidPDF/i.test(msg)) return 'This doesn’t look like a valid PDF file.';
+  return `${isPdf ? 'The PDF' : 'The image'} couldn’t be processed: ${msg}`;
+}
+
+function footer(): HTMLElement {
+  const point = (title: string, body: string) => h('li', null, h('strong', null, title), ' ', body);
+  return h(
+    'footer',
+    { class: 'foot' },
+    h(
+      'details',
+      { class: 'how' },
+      h('summary', null, 'How it works'),
+      h(
+        'ul',
+        { class: 'how__list' },
+        point('On your device.', 'Text recognition and detection run in this page. It is blocked from connecting to any other server.'),
+        point('Detection can miss things.', 'It finds patterns like emails, card numbers and API keys, not names — add those under “Always hide…”. Always check before you share.'),
+        point('Solid boxes only.', 'Blur and pixelation can be reversed, so Blot never uses them.'),
+        point('Rebuilt from pixels.', 'You get a new PNG, or a new PDF of page images: no location data, metadata or hidden text. PDF text won’t be selectable.'),
+        point('Nothing is kept.', 'Closing the tab forgets your file and your terms.'),
+      ),
+    ),
+  );
+}

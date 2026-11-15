@@ -1,0 +1,6 @@
+# Netlify / Cloudflare Pages: apply the CSP as an HTTP header so it also covers the OCR and PDF
+# web workers (a <meta> CSP only covers the page itself) and can forbid framing.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
