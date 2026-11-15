@@ -1,7 +1,8 @@
 // "Install app" — a quiet link in the start screen's trust line, never a popup.
-//   Chrome / Edge / Android: shown only after the browser fired `beforeinstallprompt`; click → prompt().
-//   iPhone / iPad Safari: "Add to Home Screen" opens a two-step inline explainer.
-//   Already running as an installed app, or anything else: nothing.
+//   Browsers with an install prompt (Chrome / Edge / Android Chrome): "Install app" → prompt().
+//   Browsers where installing is a manual menu step (every iPhone/iPad browser since iOS 16.4,
+//   Firefox on Android, Safari on Mac): a link that opens a one-line, browser-specific how-to.
+//   Already running as an installed app, or in-app web views (Instagram, WeChat…): nothing.
 import { h, svg } from './dom';
 
 interface InstallPromptEvent extends Event {
@@ -9,26 +10,49 @@ interface InstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export type InstallOffer = 'prompt' | 'ios' | null;
+export type ManualInstall = 'ios-safari' | 'ios-chrome' | 'ios-edge' | 'ios-firefox' | 'android-firefox' | 'mac-safari';
+export type InstallOffer = 'prompt' | ManualInstall | null;
 
 /** What to offer, from the facts of this browser. */
-export function installOffer(env: { standalone: boolean; canPrompt: boolean; iosSafari: boolean }): InstallOffer {
+export function installOffer(env: { standalone: boolean; canPrompt: boolean; manual: ManualInstall | null }): InstallOffer {
   if (env.standalone) return null;
   if (env.canPrompt) return 'prompt';
-  if (env.iosSafari) return 'ios';
-  return null;
+  return env.manual;
+}
+
+const IN_APP = /OPiOS|OPT\/|YaBrowser|DuckDuckGo|GSA\/|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger|Snapchat|TikTok|musical_ly/;
+
+/** iOS version from "CPU iPhone OS 17_2 like Mac OS X" as 17.02 (iPadOS with a Mac UA: unknown → assume new). */
+function iosVersion(ua: string): number {
+  const m = /OS (\d+)_(\d+)/.exec(ua);
+  return m ? Number(m[1]) + Number(m[2]) / 100 : 99;
 }
 
 /**
- * Safari on iPhone / iPad (where "Add to Home Screen" is in the Share menu). iPadOS reports a Mac
- * user agent, so a Mac UA with touch points counts too. Other iOS browsers and in-app web views
- * (Chrome, Firefox, Edge, Google app, Facebook, Instagram…) are excluded: their menus differ.
+ * Which manual "add to home screen" route this browser has, if any. iPadOS reports a Mac user
+ * agent, so a Mac UA with touch points counts as iOS. Third-party iOS browsers can add to the
+ * home screen since iOS 16.4. In-app web views can't, so they get nothing.
  */
-export function isIosSafari(ua: string, maxTouchPoints = 0): boolean {
+export function manualInstallFor(ua: string, maxTouchPoints = 0): ManualInstall | null {
+  if (IN_APP.test(ua)) return null;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
-  if (!ios) return false;
-  if (/CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|YaBrowser|DuckDuckGo|GSA\/|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger|Snapchat/.test(ua)) return false;
-  return /Version\/[\d.]+.*Safari\//.test(ua);
+  if (ios) {
+    const modern = iosVersion(ua) >= 16.04;
+    if (/CriOS\//.test(ua)) return modern ? 'ios-chrome' : null;
+    if (/EdgiOS\//.test(ua)) return modern ? 'ios-edge' : null;
+    if (/FxiOS\//.test(ua)) return modern ? 'ios-firefox' : null;
+    return /Version\/[\d.]+.*Safari\//.test(ua) ? 'ios-safari' : null; // bare web views have no "Safari/"
+  }
+  if (/Android/.test(ua) && /Firefox\//.test(ua)) return 'android-firefox';
+  const mac = /Macintosh/.test(ua) && !/Chrome\/|Chromium|Edg\/|Firefox\//.test(ua);
+  const safari = /Version\/(\d+)[\d.]*.*Safari\//.exec(ua);
+  if (mac && safari && Number(safari[1]) >= 17) return 'mac-safari'; // "Add to Dock" arrived in Safari 17
+  return null;
+}
+
+/** Kept for callers/tests that only care about Safari on iPhone/iPad. */
+export function isIosSafari(ua: string, maxTouchPoints = 0): boolean {
+  return manualInstallFor(ua, maxTouchPoints) === 'ios-safari';
 }
 
 export function isStandalone(): boolean {
@@ -58,7 +82,7 @@ function currentOffer(): InstallOffer {
   return installOffer({
     standalone: isStandalone(),
     canPrompt: deferred !== null,
-    iosSafari: isIosSafari(navigator.userAgent, navigator.maxTouchPoints),
+    manual: manualInstallFor(navigator.userAgent, navigator.maxTouchPoints),
   });
 }
 
@@ -76,14 +100,18 @@ export function createInstallLink(): { el: HTMLElement; destroy(): void } {
         h('span', { class: 'install__sep', 'aria-hidden': 'true' }, ' · '),
         h('button', { type: 'button', class: 'linkbtn linkbtn--soft install__link', onclick: () => void install() }, 'Install app'),
       );
-    } else if (offer === 'ios') {
-      const how = h(
-        'span',
-        { class: 'install__how', id: 'install-how', hidden: true },
-        'In Safari, tap Share ',
-        svg(SHARE_ICON),
-        ' then “Add to Home Screen”. Redactly opens like an app and works offline.',
-      );
+    } else if (offer) {
+      const share = () => svg(SHARE_ICON);
+      const steps: Record<ManualInstall, (string | Element)[]> = {
+        'ios-safari': ['Tap Share ', share(), ' then “Add to Home Screen”.'],
+        'ios-chrome': ['Tap Share ', share(), ' in the address bar (or ⋯ → Share), then “Add to Home Screen”.'],
+        'ios-edge': ['Tap ⋯ → Share ', share(), ', then “Add to Home Screen”.'],
+        'ios-firefox': ['Tap the menu ☰ → Share, then “Add to Home Screen”.'],
+        'android-firefox': ['Tap the ⋮ menu, then “Install”.'],
+        'mac-safari': ['In the menu bar, choose File → “Add to Dock”.'],
+      };
+      const label = offer === 'mac-safari' ? 'Add to Dock' : offer === 'android-firefox' ? 'Install app' : 'Add to Home Screen';
+      const how = h('span', { class: 'install__how', id: 'install-how', hidden: true }, ...steps[offer], ' Redactly then opens like an app and works offline.');
       const link = h(
         'button',
         {
@@ -97,7 +125,7 @@ export function createInstallLink(): { el: HTMLElement; destroy(): void } {
             link.setAttribute('aria-expanded', String(open));
           },
         },
-        'Add to Home Screen',
+        label,
       );
       el.replaceChildren(h('span', { class: 'install__sep', 'aria-hidden': 'true' }, ' · '), link, how);
     } else {

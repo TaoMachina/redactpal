@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { installOffer, isIosSafari } from '../src/ui/install';
+import { installOffer, isIosSafari, manualInstallFor } from '../src/ui/install';
 import { decodeShared, discardShared, isShareLaunch, sharedText, takeShared, withoutShareParam } from '../src/ui/share';
 import { FakeCacheStorage } from './fakecaches';
 
@@ -100,10 +100,24 @@ describe('install offer', () => {
     expect(isIosSafari(ANDROID_CHROME, 5)).toBe(false);
   });
 
-  it('offers nothing when installed, the prompt when the browser allows it, else the iOS explainer', () => {
-    expect(installOffer({ standalone: true, canPrompt: true, iosSafari: true })).toBeNull();
-    expect(installOffer({ standalone: false, canPrompt: true, iosSafari: false })).toBe('prompt');
-    expect(installOffer({ standalone: false, canPrompt: false, iosSafari: true })).toBe('ios');
-    expect(installOffer({ standalone: false, canPrompt: false, iosSafari: false })).toBeNull();
+  it('gives every iPhone browser its own home-screen route; nothing for in-app views', () => {
+    const ua = (os: string, tail: string) => `Mozilla/5.0 (iPhone; CPU iPhone OS ${os} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ${tail}`;
+    expect(manualInstallFor(IPHONE_SAFARI, 5)).toBe('ios-safari');
+    expect(manualInstallFor(IPHONE_CHROME, 5)).toBe('ios-chrome');
+    expect(manualInstallFor(ua('18_1', 'EdgiOS/131.0 Version/18.0 Mobile/15E148 Safari/604.1'), 5)).toBe('ios-edge');
+    expect(manualInstallFor(ua('18_1', 'FxiOS/133.0 Mobile/15E148 Safari/605.1.15'), 5)).toBe('ios-firefox');
+    expect(manualInstallFor(ua('16_3', 'CriOS/120.0 Mobile/15E148 Safari/604.1'), 5)).toBeNull(); // before iOS 16.4
+    expect(manualInstallFor(IPHONE_WEBVIEW, 5)).toBeNull();
+    expect(manualInstallFor(IPHONE_FB, 5)).toBeNull();
+    expect(manualInstallFor(ANDROID_CHROME, 5)).toBeNull(); // has the install prompt instead
+    expect(manualInstallFor('Mozilla/5.0 (Android 14; Mobile; rv:133.0) Gecko/133.0 Firefox/133.0', 5)).toBe('android-firefox');
+    expect(manualInstallFor(IPAD_DESKTOP, 0)).toBe('mac-safari'); // Safari 18 on a real Mac
+  });
+
+  it('offers nothing when installed, the prompt when the browser allows it, else the manual route', () => {
+    expect(installOffer({ standalone: true, canPrompt: true, manual: 'ios-safari' })).toBeNull();
+    expect(installOffer({ standalone: false, canPrompt: true, manual: null })).toBe('prompt');
+    expect(installOffer({ standalone: false, canPrompt: false, manual: 'ios-chrome' })).toBe('ios-chrome');
+    expect(installOffer({ standalone: false, canPrompt: false, manual: null })).toBeNull();
   });
 });
