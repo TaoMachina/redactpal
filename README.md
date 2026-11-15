@@ -1,5 +1,9 @@
 # Redactly
 
+[![Open Redactly](public/og.png)](https://redactly.fyi)
+
+**[redactly.fyi](https://redactly.fyi)** · Free · Open source (MIT) · Nothing is uploaded
+
 **Hide sensitive info before you share.** Paste a screenshot, drop a PDF, or paste text — Redactly finds emails, phone numbers, card numbers, API keys, passwords and more, and covers them with solid boxes. You check, then copy or share the safe version.
 
 Everything runs on your device. Nothing is uploaded. Turn off Wi-Fi and it still works.

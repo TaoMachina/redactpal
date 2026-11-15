@@ -85,7 +85,7 @@ export function createStart(on: StartHandlers): StartController {
       'div',
       { class: 'start__intro' },
       title,
-      h('p', { class: 'start__lede' }, 'Screenshots, PDFs and text. Everything stays in your browser — nothing is uploaded.'),
+      h('p', { class: 'start__lede' }, 'Redact screenshots, PDFs and text. Everything stays in your browser — nothing is uploaded.'),
     ),
     zone,
     fileInput,

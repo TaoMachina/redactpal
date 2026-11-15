@@ -1738,3 +1738,38 @@ body[data-screen='text'] .foot {
 .dropzone__title.sr-only + .dropzone__actions {
   margin-top: 1.5rem;
 }
+
+/* ---- FAQ (static HTML in index.html, below the app; start screen only) -------------------- */
+.faq {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0.5rem var(--gutter) calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+.faq h2 {
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+  font: 600 1.05rem/1.3 var(--sans);
+}
+.faq__item {
+  border-top: 1px solid var(--line);
+}
+.faq__item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.faq__item summary {
+  padding: 0.7rem 0;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.faq__item p {
+  margin: 0 0 0.9rem;
+  line-height: 1.55;
+}
+/* Only under the start screen (not processing, review, text mode or errors). */
+html.is-app-shell .faq,
+body:not(:has(.screen.start)) .faq {
+  display: none;
+}

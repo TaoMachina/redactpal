@@ -1,3 +1,2 @@
-// Project-level settings for the UI. Set SOURCE_URL to the public repository so "Open source (MIT)"
-// becomes a link (left empty until the repository URL is decided).
-export const SOURCE_URL = '';
+// Project-level settings for the UI. SOURCE_URL makes "Open source (MIT)" a link to the code.
+export const SOURCE_URL = 'https://github.com/stefano2007517-star/redactly';
