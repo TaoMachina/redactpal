@@ -1,6 +1,18 @@
 import { defineConfig, type Plugin } from 'vite';
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { execSync } from 'node:child_process';
+
+/** Short commit id shown in the footer (Cloudflare Pages provides it; locally ask git). */
+function buildId(): string {
+  const sha = process.env.CF_PAGES_COMMIT_SHA;
+  if (sha) return sha.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
 
 /**
  * Writes dist/precache.json: every file the app may need, so the service worker can fetch them all
@@ -40,6 +52,7 @@ export default defineConfig({
   base: './',
   build: { target: 'es2022', sourcemap: true },
   worker: { format: 'es' },
+  define: { __BUILD__: JSON.stringify(buildId()) },
   plugins: [precacheManifest()],
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },
 } as any);

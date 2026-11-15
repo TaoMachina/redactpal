@@ -2,7 +2,6 @@
 import { SOURCE_URL } from './config';
 import { h, isCoarsePointer } from './dom';
 import { pasteShortcut } from './format';
-import { canReadClipboard } from './input';
 import { createInstallLink } from './install';
 
 export interface StartHandlers {
@@ -73,7 +72,7 @@ export function createStart(on: StartHandlers): StartController {
       'div',
       { class: 'dropzone__actions' },
       choose,
-      coarse && canReadClipboard() ? h('button', { type: 'button', class: 'btn btn--lg', onclick: on.onPasteButton }, 'Paste') : null,
+      null, // No Paste button on phones: a screenshot there goes to Photos, not the clipboard; tapping the box opens the picker.
     ),
     h('p', { class: 'dropzone__sub' }, 'Screenshots and photos (PNG, JPG, WebP) or PDF'),
   );
@@ -102,6 +101,8 @@ export function createStart(on: StartHandlers): StartController {
       'Runs on your device. Turn off Wi-Fi and it still works. ',
       SOURCE_URL ? h('a', { href: SOURCE_URL, rel: 'noopener' }, 'Open source (MIT)') : h('span', null, 'Open source (MIT).'),
       install.el,
+      // Which build this is — so "is my phone on the latest version?" has an answer.
+      h('span', { class: 'trust__ver' }, ` · v${__BUILD__}`),
     ),
   );
 
