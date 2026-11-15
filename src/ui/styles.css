@@ -601,11 +601,9 @@ body.is-dragging .drop-overlay {
 
 .notice {
   margin: 0 0 1rem;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid var(--tint);
-  background: var(--surface);
-  border-radius: 0 8px 8px 0;
-  font-size: 0.92rem;
+  padding: 0;
+  color: var(--ink-2);
+  font-size: 0.88rem;
   max-width: 48rem;
 }
 .notice p {
@@ -967,28 +965,32 @@ body.is-dragging .drop-overlay {
 
 /* "“Maria Lopez” appears 4 more times. [Hide all] [×]" after drawing a box (review.ts). */
 .everywhere {
+  /* A small dark contextual toolbar (like a selection toolbar), not a card with a colored stripe.
+     The "done" state below keeps the same shape, so the toolbar simply turns into a confirmation. */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.4rem 0.6rem;
-  padding: 0.45rem 0.4rem 0.45rem 0.85rem;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--tone-custom);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 6px 24px rgba(22, 32, 44, 0.22);
-  font-size: 0.92rem;
-  line-height: 1.35;
+  gap: 0.5rem;
+  padding: 0.3rem 0.3rem 0.3rem 0.85rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow:
+    0 10px 28px rgba(15, 20, 28, 0.22),
+    0 1px 3px rgba(15, 20, 28, 0.2);
+  font-size: 0.86rem;
+  line-height: 1.3;
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
+  animation: ew-in 140ms ease-out;
 }
 .everywhere.is-anchored {
   position: absolute;
   z-index: 1100; /* above hot/selected regions (1000) */
   width: max-content;
-  max-width: min(22rem, 100%);
+  max-width: min(30rem, 100%);
   pointer-events: auto;
 }
 .everywhere.is-bar {
@@ -999,46 +1001,115 @@ body.is-dragging .drop-overlay {
   margin: 0 0 0.75rem;
 }
 .everywhere__text {
-  flex: 1 1 10rem;
+  flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+/* "Done" state: a small quiet pill, ring draws → check appears → fades out by itself. */
 .everywhere.is-done {
-  flex-wrap: nowrap;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
 }
 .everywhere.is-done .everywhere__text {
   flex: 0 1 auto;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.everywhere.is-done.is-bar {
+  width: max-content;
+}
+.everywhere.is-leaving {
+  opacity: 0;
+  transform: translateY(-3px) scale(0.98);
+  transition:
+    opacity 240ms ease,
+    transform 240ms ease;
+}
+.everywhere__ring {
+  flex: none;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.everywhere__ring .ring {
+  stroke: color-mix(in srgb, var(--paper) 35%, transparent);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  animation: ew-draw 560ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+.everywhere__ring .tick {
+  stroke: var(--paper);
+  stroke-width: 2;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ew-draw 260ms ease-out 480ms forwards;
+}
+@keyframes ew-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ew-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .everywhere.is-done,
+  .everywhere__ring .ring,
+  .everywhere__ring .tick {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .everywhere.is-leaving {
+    transform: none;
+  }
 }
 .everywhere__text--error {
-  color: var(--danger);
+  color: #ffb4a8;
 }
-.everywhere__go {
-  min-height: 36px;
-  padding: 0 0.9rem;
-  font-size: 0.9rem;
-}
-.everywhere__close {
-  width: 32px;
-  height: 32px;
-}
-.everywhere__close:hover {
+.everywhere .everywhere__go {
+  flex: none;
+  min-height: 30px;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--paper);
   color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 650;
 }
-.everywhere.is-done {
-  border-left-color: var(--ok);
+.everywhere .everywhere__go:hover {
+  background: color-mix(in srgb, var(--paper) 86%, var(--ink));
 }
-.everywhere.is-done .everywhere__text {
-  color: var(--ok);
+.everywhere .everywhere__close {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--paper) 60%, transparent);
+}
+.everywhere .everywhere__close:hover {
+  color: var(--paper);
+  background: color-mix(in srgb, var(--paper) 12%, transparent);
 }
 @media (pointer: coarse) {
-  .everywhere__go {
-    min-height: 44px;
+  .everywhere .everywhere__go {
+    min-height: 40px;
   }
-  .everywhere__close {
-    width: 44px;
-    height: 44px;
+  .everywhere .everywhere__close {
+    width: 40px;
+    height: 40px;
   }
 }
 .is-final .everywhere {

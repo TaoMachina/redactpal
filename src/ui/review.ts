@@ -29,6 +29,12 @@ type Via = 'copy' | 'download' | 'share';
 const CLOSE_ICON =
   '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
+/** Ring that draws itself once, then a check mark (animated in CSS: .everywhere__ring). */
+const DONE_RING =
+  '<svg class="everywhere__ring" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">' +
+  '<circle class="ring" cx="10" cy="10" r="8.25" pathLength="1"/>' +
+  '<path class="tick" d="M6.2 10.4l2.5 2.4 5-5.3" pathLength="1"/></svg>';
+
 export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController {
   const coarse = isCoarsePointer();
   const isPdf = doc.type === 'pdf';
@@ -257,12 +263,16 @@ export function createReview(doc: ReviewDoc, host: ReviewHost): ReviewController
     host.setTerms(terms);
     changed();
     const msg = `Hidden ${s.count} more.`;
-    const close = closeButton();
-    const hadFocus = every.el.contains(document.activeElement);
-    every.el.classList.add('is-done');
-    every.el.replaceChildren(h('p', { class: 'everywhere__text' }, `✓ ${msg}`), close);
-    if (hadFocus) close.focus({ preventScroll: true });
-    every.timer = setTimeout(() => dismissEvery(), 3000);
+    // The new boxes on the page are the real confirmation; this is just a brief, quiet "done":
+    // a small pill whose ring draws itself around a check, then fades away on its own.
+    const done = every;
+    if (done.el.contains(document.activeElement)) title.focus({ preventScroll: true });
+    done.el.classList.add('is-done');
+    done.el.replaceChildren(svg(DONE_RING), h('span', { class: 'everywhere__text' }, `${s.count} more hidden`));
+    done.timer = setTimeout(() => {
+      done.el.classList.add('is-leaving');
+      done.timer = setTimeout(() => dismissEvery(), 260);
+    }, 1400);
     announce(`${msg} Every “${shorten(s.phrase)}” will be hidden. To undo, untick it under See list.`);
   }
 
