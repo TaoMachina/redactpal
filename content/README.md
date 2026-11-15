@@ -11,7 +11,7 @@ content/
   guides/<slug>.md        → /guides/<slug>/    an article (static HTML + one stylesheet, no script)
   guides/img/<file>       → /guides/img/<file> images used in guides (and pages)
   llms.txt                → /llms.txt          the hand-written part; the "## Links" section is generated
-  briefs/                 writing briefs (not built)
+  (writing briefs live outside this repo)
 ```
 
 Also generated: `/guides/` (list of guides, newest first), `/sitemap.xml` (every page, `lastmod` from
