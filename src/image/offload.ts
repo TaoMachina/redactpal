@@ -36,7 +36,7 @@ export async function preprocess(src: PreprocessSource, budget: PreprocessBudget
       return await preprocessInWorker(src, budget);
     } catch (e) {
       if (!(e instanceof WorkerUnavailable)) throw e;
-      console.warn('Redactly: preprocessing worker unavailable, using the main thread', e.message);
+      console.warn('RedactPal: preprocessing worker unavailable, using the main thread', e.message);
     }
   }
   return preprocessImage(src, budget, timeSlicer());

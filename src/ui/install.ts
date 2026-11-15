@@ -111,7 +111,7 @@ export function createInstallLink(): { el: HTMLElement; destroy(): void } {
         'mac-safari': ['In the menu bar, choose File → “Add to Dock”.'],
       };
       const label = offer === 'mac-safari' ? 'Add to Dock' : offer === 'android-firefox' ? 'Install app' : 'Add to Home Screen';
-      const how = h('span', { class: 'install__how', id: 'install-how', hidden: true }, ...steps[offer], ' Redactly then opens like an app and works offline.');
+      const how = h('span', { class: 'install__how', id: 'install-how', hidden: true }, ...steps[offer], ' RedactPal then opens like an app and works offline.');
       const link = h(
         'button',
         {

@@ -1,17 +1,17 @@
-# Redactly
+# RedactPal
 
-[![Open Redactly](public/og.png)](https://redactly.fyi)
+[![Open RedactPal](public/og.png)](https://redactpal.com)
 
-**[redactly.fyi](https://redactly.fyi)** · Free · Open source (MIT) · Nothing is uploaded
+**[redactpal.com](https://redactpal.com)** · Free · Open source (MIT) · Nothing is uploaded
 
-**Hide sensitive info before you share.** Paste a screenshot, drop a PDF, or paste text — Redactly finds emails, phone numbers, card numbers, API keys, passwords and more, and covers them with solid boxes. You check, then copy or share the safe version.
+**Hide sensitive info before you share.** Paste a screenshot, drop a PDF, or paste text — RedactPal finds emails, phone numbers, card numbers, API keys, passwords and more, and covers them with solid boxes. You check, then copy or share the safe version.
 
 Everything runs on your device. Nothing is uploaded. Turn off Wi-Fi and it still works.
 
 ## How to use
 
 1. Take a screenshot (or pick an image / PDF).
-2. Open Redactly and press **Ctrl+V / ⌘V** (or drop the file, or tap *Choose*).
+2. Open RedactPal and press **Ctrl+V / ⌘V** (or drop the file, or tap *Choose*).
 3. Sensitive spots are highlighted. Tap a highlight to keep it visible; drag to hide anything that was missed.
 4. Press **Copy** (or **Share** on a phone / **Download** for PDFs). The exported file has solid black boxes.
 
@@ -23,9 +23,9 @@ Just open the site in your phone's browser — nothing to set up. Tap **Choose a
 
 ## Install it
 
-Optional, but handy: Redactly then opens from your home screen like any other app, full screen.
+Optional, but handy: RedactPal then opens from your home screen like any other app, full screen.
 
-- **Android (Chrome, Edge, Samsung Internet):** tap **Install app** under the start screen (or *Install* in the browser menu). After that, Redactly appears in your share sheet: in your gallery or files app, tap **Share → Redactly** on a photo or PDF and it opens ready to check.
+- **Android (Chrome, Edge, Samsung Internet):** tap **Install app** under the start screen (or *Install* in the browser menu). After that, RedactPal appears in your share sheet: in your gallery or files app, tap **Share → RedactPal** on a photo or PDF and it opens ready to check.
 - **iPhone / iPad (Safari):** tap **Add to Home Screen** under the start screen for the two steps — the **Share** button, then *Add to Home Screen*.
 - **Computer (Chrome, Edge):** the **Install app** link, or the install icon in the address bar.
 
@@ -34,13 +34,13 @@ It works offline after the first time you open it, and updates itself automatica
 ## Why you can trust it
 
 - **No uploads, no tracking, no third-party requests.** All code and the OCR engine are served from the same origin; a strict Content-Security-Policy blocks connections elsewhere.
-- **Solid boxes only.** Blur and pixelation can be reversed; Redactly never uses them.
+- **Solid boxes only.** Blur and pixelation can be reversed; RedactPal never uses them.
 - **Rebuilt from pixels.** Exported images are re-encoded (no EXIF/GPS). Exported PDFs are rebuilt page-by-page as images, so text under a box cannot be copied out, and metadata (author, title, …) is dropped. Trade-off: text in the exported PDF is not selectable.
-- **Detection can miss things.** It is rule-based (formats, checksums, known key prefixes) — always look before you share. Drag over a name once and Redactly offers to hide it everywhere it appears.
+- **Detection can miss things.** It is rule-based (formats, checksums, known key prefixes) — always look before you share. Drag over a name once and RedactPal offers to hide it everywhere it appears.
 
 ## Self-hosting (companies)
 
-Redactly is a static site with no backend.
+RedactPal is a static site with no backend.
 
 ```bash
 npm install

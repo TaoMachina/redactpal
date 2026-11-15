@@ -24,7 +24,7 @@ d = ImageDraw.Draw(img)
 s = lambda v: int(v * S)
 
 # left: name + promise
-d.text((s(72), s(150)), "Redactly", font=serif_b, fill=INK)
+d.text((s(72), s(150)), "RedactPal", font=serif_b, fill=INK)
 d.text((s(76), s(272)), "Redact screenshots, PDFs & text", font=sans, fill=INK)
 d.text((s(76), s(318)), "before you share them.", font=sans, fill=INK)
 d.text((s(76), s(410)), "Free  ·  Open source  ·  Nothing is uploaded", font=sans_s, fill=INK2)

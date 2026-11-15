@@ -54,7 +54,7 @@ describe('flattened PDF output', () => {
     const doc = await pdfjs.getDocument({ data: bytes.slice(), verbosity: 0 }).promise;
     expect(doc.numPages).toBe(2);
     const { info, metadata } = (await doc.getMetadata()) as { info: Record<string, unknown>; metadata: unknown };
-    expect(info.Producer).toBe('Redactly');
+    expect(info.Producer).toBe('RedactPal');
     for (const k of ['Title', 'Author', 'Creator', 'Subject', 'Keywords', 'CreationDate', 'ModDate']) expect(info[k], k).toBeUndefined();
     expect(metadata).toBeFalsy(); // no XMP
 

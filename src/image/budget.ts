@@ -138,11 +138,11 @@ export function decodeResizeWidth(shown: Size, target: Size, rotated: boolean): 
   return Math.max(1, Math.floor(base * s));
 }
 
-/** User-facing note when Redactly works on (and saves) a smaller copy of a huge photo. */
+/** User-facing note when RedactPal works on (and saves) a smaller copy of a huge photo. */
 export function downscaleNotice(original: Size, used: Size): string {
   const mp = Math.round((original.width * original.height) / 1e6);
   return (
-    `This photo is very large (${mp} MP), so to stay within your device's memory Redactly works on a ` +
+    `This photo is very large (${mp} MP), so to stay within your device's memory RedactPal works on a ` +
     `${used.width} × ${used.height} copy. The image you save will be that size.`
   );
 }

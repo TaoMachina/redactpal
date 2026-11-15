@@ -1,4 +1,4 @@
-/* Redactly — a security-envelope look: cool paper, blue-black ink, a faint crosshatch tint where
+/* RedactPal — a security-envelope look: cool paper, blue-black ink, a faint crosshatch tint where
    sensitive things are handled, and one true black reserved for the redaction itself. */
 
 :root {
@@ -32,7 +32,7 @@
   --bar-h: 3.75rem;
   --head-h: 3.5rem;
 
-  /* Notches, rounded corners and home indicators (viewport-fit=cover; mostly matters when Redactly runs
+  /* Notches, rounded corners and home indicators (viewport-fit=cover; mostly matters when RedactPal runs
      as an installed app or in landscape). Side gutters never shrink below --gutter. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);

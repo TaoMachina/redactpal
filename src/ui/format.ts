@@ -20,7 +20,7 @@ export function classifyFile(f: { type?: string; name?: string }): InputKind {
 export function unsupportedMessage(f: { type?: string; name?: string }): string {
   if ((f.type || '').toLowerCase() === 'image/svg+xml' || /\.svg$/i.test(f.name || ''))
     return 'SVG files can hide text that isn’t visible. Take a screenshot of it and drop that instead.';
-  return 'Redactly works with screenshots and photos (PNG, JPG, WebP), PDFs, and plain text.';
+  return 'RedactPal works with screenshots and photos (PNG, JPG, WebP), PDFs, and plain text.';
 }
 
 /** "Screenshot 2024-05-01.png" -> "Screenshot 2024-05-01-redacted.png". */

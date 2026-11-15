@@ -137,7 +137,7 @@ export function ocrScale(source: Size, ocrImage: Size): Size {
 export interface ImageAnalysis extends PageAnalysis {
   /** The decoded image: what the review screen draws and the exporter saves. width/height are its size. */
   bitmap: ImageBitmap;
-  /** Set when the file was larger than this device can handle and Redactly works on a smaller copy. */
+  /** Set when the file was larger than this device can handle and RedactPal works on a smaller copy. */
   original?: Size;
   /** User-facing note to show with the result (e.g. "the saved image will be W × H"). */
   notice?: string;
@@ -159,7 +159,7 @@ export async function analyzeImage(file: Blob, opts: DetectOptions = {}, onProgr
     try {
       tokens = (await ocrJob(bitmap, (f, msg) => onProgress?.(0.02 + 0.88 * f, msg), big ? PREPARING_PHOTO : undefined)).tokens;
     } catch (e) {
-      console.warn('Redactly: OCR failed', e);
+      console.warn('RedactPal: OCR failed', e);
       onProgress?.(1, 'Done');
       return { width, height, tokens: [], text: '', findings: [], regions: [], warning: IMAGE_OCR_FAILED_WARNING, bitmap, ...extra };
     }
@@ -262,7 +262,7 @@ export async function decodeImageDetailed(file: Blob, budget: ImageBudget = curr
     throw new Error(`SVG images aren't supported. Export or screenshot it as PNG first.`);
   }
   if (type && !type.startsWith('image/')) {
-    throw new Error(`This file type (${type}) isn't an image Redactly can read. ${SUPPORTED}`);
+    throw new Error(`This file type (${type}) isn't an image RedactPal can read. ${SUPPORTED}`);
   }
   if (file.size === 0) throw new Error('This file is empty.');
   if (file.size > MAX_IMAGE_BYTES) {

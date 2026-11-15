@@ -1,4 +1,4 @@
-// Redactly service worker: keeps the app's own files so it works offline. Same-origin GETs only;
+// RedactPal service worker: keeps the app's own files so it works offline. Same-origin GETs only;
 // it never sees your files (they are read locally by the page) — with one exception: a photo or PDF
 // shared to the installed app from Android's share sheet arrives here as a POST. It is parked in its
 // own cache ('blot-share') just long enough for the page to pick it up, and the page deletes it

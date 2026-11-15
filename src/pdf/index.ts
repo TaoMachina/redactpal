@@ -79,7 +79,7 @@ function loadError(e: unknown): PdfError {
   if (name === 'PasswordException') {
     return new PdfError(
       'password',
-      'This PDF is password-protected. Redactly can’t open encrypted PDFs yet — remove the password first ' +
+      'This PDF is password-protected. RedactPal can’t open encrypted PDFs yet — remove the password first ' +
         '(e.g. open it in your PDF viewer and save or “Print to PDF” an unprotected copy), then drop that copy here.',
       e,
     );
@@ -314,7 +314,7 @@ export async function analyzePdf(file: Blob, opts: AnalyzePdfOptions = {}, onPro
   try {
     const n = doc.numPages;
     if (n > MAX_PAGES) {
-      throw new PdfError('too_many_pages', `This PDF has ${n} pages. Redactly handles up to ${MAX_PAGES} pages at a time — split it into smaller parts first.`);
+      throw new PdfError('too_many_pages', `This PDF has ${n} pages. RedactPal handles up to ${MAX_PAGES} pages at a time — split it into smaller parts first.`);
     }
     const metadata = await readMetadata(mod, doc);
     let annotationTotal = 0;
@@ -333,7 +333,7 @@ export async function analyzePdf(file: Blob, opts: AnalyzePdfOptions = {}, onPro
       let scanned = false;
       let warning: string | undefined;
       const ocrFailed = (e: unknown) => {
-        console.warn(`Redactly: OCR failed on page ${i + 1}`, e);
+        console.warn(`RedactPal: OCR failed on page ${i + 1}`, e);
         warning = OCR_FAILED_WARNING;
       };
 
