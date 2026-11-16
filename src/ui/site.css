@@ -63,6 +63,9 @@ body:has(#app):not(:has(.screen.start, .screen.is-entry)) .masthead__nav {
 .page-copy {
   margin: 0 0 2rem;
 }
+.dateline--page {
+  margin: 0 0 2rem;
+}
 .prose--quiet {
   color: var(--ink-2);
   font-size: 0.95rem;

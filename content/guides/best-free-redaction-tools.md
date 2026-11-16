@@ -3,7 +3,7 @@ title: "Best Free Redaction Tools in 2026: 9 Compared"
 description: Best free redaction tools in 2026 compared, from RedactPal, Snipping Tool, Preview, Markup, Google Photos, PDF24, Smallpdf, Acrobat and more.
 h1: "The Best Free Redaction Tools of 2026, Ranked — Starting With the One That Never Sees Your File"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,9 @@ related:
   - guides/redact-photo-alternative
   - guides/can-blurred-text-be-unblurred
   - guides/how-to-check-if-pdf-redaction-worked
+  - guides/how-to-check-a-redaction-tool-doesnt-upload-your-file
+  - guides/snagit-smart-redact-free-alternative
+  - guides/updf-redact-alternative
 faq_title: Free redaction tools — questions
 faq:
   - q: What is the best free redaction tool?
@@ -36,7 +39,7 @@ faq:
 
 Four questions decide whether a redaction tool is safe to trust with a real document:
 
-1. **Does your file leave your device?**
+1. **Does your file leave your device?** You can [test this yourself in a minute](/guides/how-to-check-a-redaction-tool-doesnt-upload-your-file/).
 2. **Does it find the sensitive data, or do you have to?**
 3. **How does it hide it?** A solid box leaves nothing to recover. [Blur and pixelation can often be reversed](/guides/can-blurred-text-be-unblurred/).
 4. **What does it handle?** Screenshots, PDFs, text.
@@ -64,6 +67,8 @@ Competitor facts below come from each vendor's own pages and from published cove
 [RedactPal](/) is free, MIT licensed and needs no account. Files are processed in your browser, and a Content-Security-Policy blocks connections to other servers, so nothing is uploaded. It works offline after the first visit, installs as an app, and runs in iPhone and Android browsers, with an Android share target.
 
 It handles screenshots and photos (read with on-device OCR, including dark-mode terminals), PDFs up to 200 pages, and plain text. It finds emails, phone numbers, card numbers (Luhn), IBANs (mod-97), labelled bank account numbers, US routing numbers, UK sort codes, US SSNs, IP and MAC addresses, passwords and secrets in config, JWTs, private keys and API keys for AWS, GitHub, GitLab, Slack, Stripe, OpenAI, Anthropic, Google and others. For names, drag a box once and it offers to hide every other occurrence.
+
+![RedactPal's preview of a fake chat screenshot with every detected secret covered by a solid black box](img/redactpal-solid-boxes-preview.png "RedactPal's preview on a fake screenshot (sample data only): solid boxes, not blur.")
 
 It covers with solid boxes and never blurs. Images are re-encoded as PNG without EXIF or GPS. PDFs are rebuilt from pixels so hidden text is gone, and metadata is not carried over. Text mode swaps secrets for placeholders like `[EMAIL_1]` for AI chats and restores them in the reply. It is static files, so you can self-host it too.
 
@@ -98,6 +103,10 @@ A single-page, free image tool. It says "All editing happens in your browser. We
 ## 9. Adobe Acrobat Pro
 
 The paid benchmark. Adobe's pricing page lists Pro at US$19.99 a month on an annual plan billed monthly, US$239.88 a year prepaid, or US$29.99 a month on a monthly plan, and Pro lists "Redact sensitive content" among its features. Standard does not include redaction ([Adobe](https://www.adobe.com/acrobat/pricing.html)). Prices as shown in November 2026. See [the Acrobat alternative](/guides/adobe-acrobat-redact-alternative/).
+
+## Two paid tools worth knowing
+
+Two paid products also redact. TechSmith's Snagit has [Smart Redact](https://www.techsmith.com/snagit/features/smart-redact/), which detects addresses, credit card numbers, dates, emails, faces, IP addresses, phone numbers, Social Security numbers and URLs in screenshots (as of November 2026). It is part of a paid desktop app, so it didn't make this list of free tools. See [the free alternative to Snagit Smart Redact](/guides/snagit-smart-redact-free-alternative/). UPDF redacts PDFs in a desktop app, and its [comparison page](https://updf.com/comparison/updf-free-vs-paid/) says most saved results from the free version carry a trial watermark (as of November 2026). See the [UPDF redact alternative](/guides/updf-redact-alternative/) for the details.
 
 ## The verdict
 

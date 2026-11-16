@@ -8,12 +8,13 @@ accept: any
 nav_label: Anonymize text for AI
 nav_order: 30
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 related:
   - redact-screenshot
   - hide-api-keys-in-screenshots
   - guides/api-key-leaked-in-screenshot-what-to-do
+  - guides/how-to-check-a-redaction-tool-doesnt-upload-your-file
 faq_title: Anonymizing text for AI chats – questions
 faq:
   - q: Does this work with Claude, Gemini and Copilot, not just ChatGPT?
@@ -36,6 +37,8 @@ faq:
 2. **Check the highlights** and add anything missed, such as names.
 3. Click **Copy safe text** and paste it into ChatGPT, Claude or Gemini.
 4. Paste the AI's reply into the reply box, then click **Copy with my details**. Your real values are back in place.
+
+![RedactPal text mode with fake text: an email, phone number, AWS key, IP address and card number are highlighted, ready to be swapped for placeholders](img/text-mode-placeholders.png "Text mode with fake sample text: five items are highlighted. Copy safe text swaps each for a placeholder such as [EMAIL_1].")
 
 ## What gets replaced?
 

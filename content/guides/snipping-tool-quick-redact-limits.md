@@ -3,7 +3,7 @@ title: "Snipping Tool Quick Redact: What It Hides (and Misses)"
 description: Snipping Tool's Quick redact hides emails and phone numbers, per Microsoft. See what else to cover by hand and why to save snips as new files.
 h1: "Snipping Tool Quick redact: how to use it and what it misses"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -39,7 +39,7 @@ faq:
     a: Microsoft documents Quick redact for Snipping Tool on Windows 11. On Windows 10, or on any other computer, RedactPal does the same job in the browser, with more kinds of data detected.
 ---
 
-**In Windows 11's Snipping Tool, take a snip, click Text actions, then Quick redact.** Microsoft documents it as hiding email addresses and phone numbers. Names, card numbers, IBANs, API keys and passwords are not part of that description, so select them and choose Redact text, or box them another way. Check the snip before you save.
+**In Windows 11's Snipping Tool, take a snip, click Text actions, then Quick redact.** Microsoft documents it as hiding email addresses and phone numbers. Names, card numbers, IBANs, API keys and passwords are not part of that description, so select them and choose Redact text, or box them another way. Check the snip before you save. To cover everything in one pass, [RedactPal](/redact-screenshot/) boxes emails, phones, cards, IBANs and keys, free in your browser.
 
 ## How to use Quick redact
 
@@ -90,6 +90,8 @@ Two habits cover you whether or not your app is current:
 - **Update Snipping Tool from the Microsoft Store.** Microsoft notes that Store auto-updates can be switched off, so check the version yourself.
 
 ## A faster way to cover everything
+
+![RedactPal highlighting an AWS key, a Stripe key, an IP address, an email, a card number and a phone number in a fake chat screenshot](img/redactpal-detects-secrets.png "RedactPal reviewing a fake chat screenshot (sample data only). Keys, cards, IPs, emails and phone numbers are all highlighted in one pass.")
 
 [RedactPal](/redact-screenshot/) is free, MIT-licensed, needs no account, and runs in your browser, so your screenshot is never uploaded. Paste the snip with Ctrl+V and it highlights emails, phone numbers, card numbers, IBANs, API keys and more, then covers them with solid boxes. The copy you export is re-encoded as a new image, so it has no leftover data from the original file and no EXIF metadata. See [hiding API keys in screenshots](/hide-api-keys-in-screenshots/) for the key formats, and [why blurring is not enough](/guides/can-blurred-text-be-unblurred/) if you are tempted to blur instead.
 

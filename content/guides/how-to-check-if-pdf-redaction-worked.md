@@ -3,7 +3,7 @@ title: How to Check If a PDF Redaction Worked (4 Quick Tests)
 description: "Four checks show whether redacted text is really gone from a PDF: select-and-copy, search, text extraction and metadata. No special software needed."
 h1: How to check if a PDF redaction actually worked
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -27,6 +27,8 @@ related:
   - redact-pdf
   - guides/can-blurred-text-be-unblurred
   - redact-bank-statement
+  - guides/redact-scanned-pdf
+  - guides/how-to-check-a-redaction-tool-doesnt-upload-your-file
 faq_title: Checking redacted PDFs — questions
 faq:
   - q: Can I check a PDF someone else sent me?
@@ -39,7 +41,7 @@ faq:
     a: That is normal for tools that edit the PDF in place. They only have to remove the redacted spans. Run the tests on the redacted words, not on the whole page.
 ---
 
-**Open the redacted PDF, press Ctrl+A (⌘A on Mac), copy, and paste into a plain text editor.** If any hidden word appears, the redaction failed. Then search for each redacted term, extract the text with `pdftotext`, and look at the file's metadata and comments. A properly redacted file passes all four checks.
+**Open the redacted PDF, press Ctrl+A (⌘A on Mac), copy, and paste into a plain text editor.** If any hidden word appears, the redaction failed. Then search for each redacted term, extract the text with `pdftotext`, and look at the file's metadata and comments. A properly redacted file passes all four checks. To redact a PDF the safe way in the first place, [RedactPal](/redact-pdf/) rebuilds every page from pixels, free, in your browser.
 
 A black box in a PDF is only a picture of a box. Whether the words underneath are gone depends on how the box was made. Drawing a rectangle on top of text leaves the text in the file, and anyone can copy it. That is how a January 2019 court filing in the Manafort case exposed its blacked-out passages: a reporter [found the text could be copied and pasted into a new document](https://www.cjr.org/analysis/manafort-mueller-redacted-document-ukraine.php) (Columbia Journalism Review). You can run the same check on your own file in two minutes.
 

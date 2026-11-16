@@ -7,12 +7,14 @@ accept: image
 nav_label: Hide API keys
 nav_order: 30
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 related:
   - guides/api-key-leaked-in-screenshot-what-to-do
   - redact-screenshot
   - anonymize-text-for-chatgpt
+  - guides/can-blurred-text-be-unblurred
+  - guides/snagit-smart-redact-free-alternative
 faq_title: Hiding API keys — questions
 faq:
   - q: Does it detect keys in dark-mode terminals?
@@ -32,6 +34,8 @@ faq:
 1. **Paste the screenshot** (Ctrl+V / ⌘V) or drop the file on this page.
 2. **Check the highlights.** Every key, token and password found is boxed. Drag over anything else.
 3. **Copy the image** and paste it into your issue, chat or post.
+
+![RedactPal highlighting an AWS access key ID and a Stripe secret key inside a pasted .env snippet in a chat screenshot](img/redactpal-detects-secrets.png "A pasted .env snippet in a fake chat screenshot: the AWS key and the Stripe key are found and highlighted before anything is covered.")
 
 ## Which keys and tokens does RedactPal detect?
 

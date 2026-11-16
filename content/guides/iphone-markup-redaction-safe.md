@@ -3,7 +3,7 @@ title: Is iPhone Markup Safe for Redaction? How to Check
 description: Markup's marker and highlighter are partly transparent, so text can show through. How to test your own screenshot and which tool to use instead.
 h1: Is iPhone Markup safe for redacting screenshots?
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -39,7 +39,7 @@ faq:
     a: Don't count on it. Freedom of the Press Foundation advises sharing a screenshot of the edited image, which gives a copy without the original photo's metadata. RedactPal re-encodes every export as a fresh PNG with no location data.
 ---
 
-**It depends on the tool.** Apple's Markup lets you change a stroke's opacity, and 9to5Mac, TapSmart and Freedom of the Press all report that the marker tools are partly transparent. A filled shape at 100% opacity is the recommended fix. Verify any redaction by raising brightness and contrast on a copy before you send it.
+**It depends on the tool.** Apple's Markup lets you change a stroke's opacity, and 9to5Mac, TapSmart and Freedom of the Press all report that the marker tools are partly transparent. A filled shape at 100% opacity is the recommended fix. Verify any redaction by raising brightness and contrast on a copy before you send it. For a one-step alternative, [RedactPal](/redact-screenshot/) draws solid boxes and finds emails, cards and keys for you, free in your browser.
 
 We could not test on an iPhone for this guide, so there is no results table here. We cite what others have documented, and below we show you how to run the check yourself in a minute, on your own device and iOS version.
 

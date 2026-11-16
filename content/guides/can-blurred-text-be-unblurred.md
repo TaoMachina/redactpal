@@ -3,7 +3,7 @@ title: "Can Blurred Text Be Unblurred? Often, Yes – Here's Proof"
 description: "Researchers have recovered blurred and pixelated text from screenshots when the font is known. See the evidence, and what to use instead: solid boxes."
 h1: "Can blurred or pixelated text be unblurred?"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 cta:
   tool: redact-screenshot
@@ -30,7 +30,7 @@ faq:
     a: "AI upscalers add plausible detail, so what they show is a guess, not a recovery. In the one video test we cite, four such tools gave no readable result, while aligning and overlaying frames did. The risk comes from matching known fonts, not from generic upscaling."
 ---
 
-**Often, yes.** Blur and pixelation keep a trace of every letter. When the font and size are known, which is typical for screenshots, researchers have recovered the hidden text. A 2016 study called mosaicing and blurring "not viable" for redaction. To hide text for good, cover it with a solid opaque box and save a flattened copy.
+**Often, yes.** Blur and pixelation keep a trace of every letter. When the font and size are known, which is typical for screenshots, researchers have recovered the hidden text. A 2016 study called mosaicing and blurring "not viable" for redaction. To hide text for good, cover it with a solid opaque box and save a flattened copy. [RedactPal](/redact-screenshot/) draws solid boxes for you and never blurs.
 
 ## Why blur and pixelation leak information
 
@@ -75,6 +75,8 @@ Sometimes it is, and that is the problem. A heavy blur on a long, unpredictable 
 The riskiest cases are short or predictable items: PINs, card digits, account numbers, names from a known list, anything with a known format. If a secret matters, don't bet on the blur.
 
 ## Blur vs pixelate vs black box vs crop
+
+![The same fake card number shown four ways: original, Gaussian blur, pixelated, and covered by a solid black box](img/blur-vs-solid-box.png "The same fake card number four ways. Blur and pixelation keep a trace of every digit that software can match against candidates. The solid box keeps nothing. Illustration made for this guide with fake data.")
 
 | Method | What the evidence says | Shows length? | Best for |
 | --- | --- | --- | --- |

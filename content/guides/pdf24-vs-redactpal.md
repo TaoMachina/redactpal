@@ -3,7 +3,7 @@ title: "PDF24 vs RedactPal: Free PDF Redaction Compared"
 description: PDF24 is free and its redaction is permanent. RedactPal is also free, never uploads, runs on any device and auto-detects cards, IBANs and API keys.
 h1: "PDF24 vs RedactPal: Both Free, Both Permanent — Only One Finds Your API Keys for You"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,7 @@ related:
   - guides/how-to-check-if-pdf-redaction-worked
   - guides/smallpdf-redact-alternative
   - guides/adobe-acrobat-redact-alternative
+  - guides/updf-redact-alternative
 faq_title: PDF24 vs RedactPal — questions
 faq:
   - q: Is PDF24 really free?
@@ -30,7 +31,7 @@ faq:
     a: Yes. Drag one box over the name and RedactPal offers to hide every other occurrence in the document.
 ---
 
-**PDF24 and RedactPal are both free and both remove the text under the boxes permanently. RedactPal is the better recommendation before you share a file: it never uploads anything on any device, runs on Windows, Mac, Linux and phones, and auto-detects card numbers, IBANs, account numbers and API keys that PDF24 leaves for you to find.**
+**PDF24 and [RedactPal](/redact-pdf/) are both free and both remove the text under the boxes permanently. RedactPal is the better recommendation before you share a file: it never uploads anything on any device, runs on Windows, Mac, Linux and phones, and auto-detects card numbers, IBANs, account numbers and API keys that PDF24 leaves for you to find.**
 
 ## Why PDF24 is so popular
 

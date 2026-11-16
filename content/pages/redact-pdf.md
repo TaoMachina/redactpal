@@ -7,16 +7,21 @@ accept: pdf
 nav_label: Redact a PDF
 nav_order: 10
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 related:
+  - guides/how-to-check-if-pdf-redaction-worked
+  - guides/redact-scanned-pdf
+  - guides/how-to-check-a-redaction-tool-doesnt-upload-your-file
+  - guides/updf-redact-alternative
+  - guides/pdf24-vs-redactpal
   - guides/can-blurred-text-be-unblurred
 faq_title: Redacting PDFs — questions
 faq:
   - q: Can someone copy the text out from under the black boxes?
     a: No. The downloaded PDF is not your original file with shapes drawn on top. Every page is rendered to an image with the boxes burned in, and a new PDF is built from those images, so there is no text layer left to select, copy or search.
   - q: Does it work on scanned PDFs?
-    a: Yes. Pages without a text layer are read with on-device text recognition (OCR). Check those pages carefully, since OCR can miss small or faint text — drag over anything it didn’t catch.
+    a: Yes. Pages without a text layer are read with on-device text recognition (OCR, English), and large images inside text pages are read too. Check those pages carefully, since OCR can miss small or faint text — drag over anything it didn’t catch. See [how to redact a scanned PDF](/guides/redact-scanned-pdf/).
   - q: Is there a page limit?
     a: RedactPal handles up to 200 pages at a time. Split longer documents into parts first.
   - q: Can I redact a password-protected PDF?
@@ -32,6 +37,8 @@ faq:
 3. **Add what was missed.** Drag a box over anything else — a name, a signature, an address, a photo. Mark a name once and RedactPal offers to hide it on every page where it appears.
 4. **Download** the redacted PDF and open it once to check before you send it.
 
+![RedactPal reviewing a one-page fake bank statement PDF with an email, phone number, account number, routing number, IBAN and card number highlighted](img/bank-statement-detected.png "A fake PDF statement open in RedactPal: six items are highlighted for review. Nothing has been covered or exported yet.")
+
 ## Why most “redacted” PDFs aren’t
 
 Drawing a black rectangle over text in a PDF editor usually just adds a shape on top. The words are still in the file: select the area, copy, and paste them somewhere else, or search the document for them. Hidden layers, form fields, comments and document properties (author, title, the software that made it) can give away even more.
@@ -45,3 +52,12 @@ RedactPal avoids all of this by not reusing your file at all. Each page is drawn
 - **You approve every box.** The final preview shows exactly what the recipient will see before you download.
 
 Need to hide something in a screenshot or a block of text instead? The [main tool](/) handles images and text the same way, and our guide explains [why blurring is not a safe substitute](/guides/can-blurred-text-be-unblurred/).
+
+## Check it yourself: nothing is uploaded
+
+You don't have to take our word for it. The test takes a minute.
+
+1. Open your browser's DevTools (F12, or Ctrl+Shift+J / ⌘⌥J in Chrome) and click the **Network** tab. Clear the list.
+2. Drop a PDF on this page and redact it. No request carries your file. The list shows only GET requests for RedactPal's own app files, such as code that loads on demand and the text-recognition engine for scans. Nothing is sent out.
+3. Switch on airplane mode and redact another one. It still works, because everything runs on your device.
+4. The browser enforces it: the site's [Content-Security-Policy](https://github.com/TaoMachina/redactpal/blob/main/public/_headers) sets `connect-src 'self' blob: data:`, so it can't connect to other servers. The [full test, for any redaction tool](/guides/how-to-check-a-redaction-tool-doesnt-upload-your-file/) shows what to look for.

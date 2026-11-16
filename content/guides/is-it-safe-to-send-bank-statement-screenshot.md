@@ -3,7 +3,7 @@ title: "Is It Safe to Send a Bank Statement Screenshot?"
 description: "Usually safe with a verified landlord or lender if you hide the full account number first. What to hide, what to keep, and the scam signs to watch for."
 h1: "Is it safe to send a screenshot of your bank statement?"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 cta:
   tool: redact-bank-statement
@@ -16,6 +16,7 @@ related:
   - guides/how-to-check-if-pdf-redaction-worked
   - guides/can-blurred-text-be-unblurred
   - /
+  - guides/redact-scanned-pdf
 faq_title: Bank statement screenshots – questions
 faq:
   - q: Can someone take money with just my account number?
@@ -28,7 +29,7 @@ faq:
     a: "Hiding details on your own copy, such as an account number, is a normal privacy step, and we aren't aware of anything that stops you. This is general information, not legal advice. Never change amounts, dates or names. That is altering a document, and a lender or landlord that spots it may reject your application."
 ---
 
-It's reasonably safe if you've verified who's asking and you hide what they don't need first: the full account number (keep the last four digits), card numbers and unrelated transactions. Never send one to someone who contacted you out of the blue. A landlord doesn't need your Social Security number before you agree to rent.
+It's reasonably safe if you've verified who's asking and you hide what they don't need first: the full account number (keep the last four digits), card numbers and unrelated transactions. Never send one to someone who contacted you out of the blue. A landlord doesn't need your Social Security number before you agree to rent. [RedactPal](/redact-bank-statement/) hides those for you, free in your browser.
 
 This guide is general information, not legal or financial advice. Several sources are from the United States and are marked as such. The principles apply anywhere.
 

@@ -50,6 +50,7 @@ export function masthead(from: string, current?: 'guides'): string {
 }
 
 const AUTHOR_LD = { '@type': 'Person', name: SITE.author.name, url: SITE.author.url };
+const WEBSITE_ID = `${SITE.origin}/#website`;
 
 export function siteFooter(site: Site, from: string, updated: string): string {
   const link = (to: string, label: string) => `<li><a href="${escapeHtml(relHref(from, to))}">${escapeHtml(label)}</a></li>`;
@@ -200,6 +201,16 @@ export function renderAppPage(template: string, site: Site, page: PageEntry, o: 
       sameAs: [SITE.github],
       founder: AUTHOR_LD,
     });
+    // Tells Google the site name ("RedactPal", not the bare domain); other pages point isPartOf here.
+    ld.push({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': WEBSITE_ID,
+      name: SITE.name,
+      alternateName: ['Redact Pal', 'redactpal.com'],
+      url: `${SITE.origin}/`,
+      publisher: { '@id': `${SITE.origin}/#org` },
+    });
   } else {
     ld.push({
       '@context': 'https://schema.org',
@@ -209,8 +220,24 @@ export function renderAppPage(template: string, site: Site, page: PageEntry, o: 
       description: page.description,
       dateModified: updated,
       inLanguage: 'en',
-      isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+      isPartOf: { '@id': WEBSITE_ID },
       about: { '@id': `${SITE.origin}/#app` },
+    });
+    ld.push({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      '@id': `${canonical}#app`,
+      name: `${SITE.name} – ${page.navLabel}`,
+      url: canonical,
+      description: page.description,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Any (web browser)',
+      browserRequirements: 'Requires JavaScript and a modern web browser',
+      dateModified: updated,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      isAccessibleForFree: true,
+      author: AUTHOR_LD,
+      publisher: { '@id': `${SITE.origin}/#org` },
     });
     ld.push(breadcrumbJsonLd([{ name: SITE.name, url: '/' }, { name: linkLabel(page), url: page.url }]));
   }
@@ -230,9 +257,12 @@ export function renderAppPage(template: string, site: Site, page: PageEntry, o: 
     `</section></main></div></div>`;
 
   const body = page.body.trim() ? renderMarkdown(page.body, c).html : '';
+  // Visible freshness + author line on landing pages (the home page has it in the footer).
+  const byline = isHome ? '' : `<p class="dateline dateline--page">Updated ${time(updated)} · By <a href="${SITE.author.url}" rel="author">${SITE.author.name}</a></p>`;
   const below =
     `<div class="page-extra">` +
     (body ? `<section class="page-copy prose prose--quiet">${body}</section>` : '') +
+    byline +
     faq.html +
     relatedBlock(site, page, from, 'Related guides') +
     `</div>\n  ` +

@@ -7,13 +7,15 @@ accept: image
 nav_label: Redact a screenshot
 nav_order: 20
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 related:
   - hide-api-keys-in-screenshots
   - guides/can-blurred-text-be-unblurred
   - guides/snipping-tool-quick-redact-limits
   - guides/iphone-markup-redaction-safe
+  - guides/snagit-smart-redact-free-alternative
+  - guides/how-to-check-a-redaction-tool-doesnt-upload-your-file
 faq_title: Redacting screenshots — questions
 faq:
   - q: Can someone remove the black box?
@@ -36,6 +38,10 @@ faq:
 2. **Check the highlights.** Sensitive text is boxed. Tap a highlight to keep it visible.
 3. **Drag over anything else**, such as a name, a face or an address.
 4. **Copy, share or save.** The result has solid black boxes and is a fresh PNG.
+
+![A fake chat screenshot containing an AWS key, a Stripe key, an IP address, an email, a card number and a phone number, before redaction](img/redactpal-screenshot-with-secrets.png "Before: a fake chat screenshot (sample data only) with six secrets in plain sight.")
+
+![The same screenshot after RedactPal's preview: every secret is covered by a solid black box](img/redactpal-solid-boxes-preview.png "After: the same screenshot in RedactPal's preview. Each secret is a solid black box, not a blur.")
 
 ## What does RedactPal hide automatically?
 
@@ -85,3 +91,12 @@ The export is re-encoded from pixels as a PNG. It carries no EXIF or GPS data fr
 RedactPal runs in any modern browser, so the steps are the same on every device. On a phone, open redactpal.com, tap **Choose a photo or PDF**, then **Share** the result. If you use built-in tools instead, read how safe they are: [Snipping Tool quick redact](/guides/snipping-tool-quick-redact-limits/) and [iPhone Markup](/guides/iphone-markup-redaction-safe/).
 
 Need a PDF instead? Use [Redact a PDF](/redact-pdf/).
+
+## Check it yourself: nothing is uploaded
+
+You don't have to take our word for it. The test takes a minute.
+
+1. Open your browser's DevTools (F12, or Ctrl+Shift+J / ⌘⌥J in Chrome) and click the **Network** tab. Clear the list.
+2. Paste a screenshot on this page and redact it. No request carries your image. The list shows only GET requests for RedactPal's own app files, such as code that loads on demand and the text-recognition engine for scans. Nothing is sent out.
+3. Switch on airplane mode and redact another one. It still works, because everything runs on your device.
+4. The browser enforces it: the site's [Content-Security-Policy](https://github.com/TaoMachina/redactpal/blob/main/public/_headers) sets `connect-src 'self' blob: data:`, so it can't connect to other servers. The [full test, for any redaction tool](/guides/how-to-check-a-redaction-tool-doesnt-upload-your-file/) shows what to look for.

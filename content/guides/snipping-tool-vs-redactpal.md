@@ -3,7 +3,7 @@ title: "Snipping Tool vs RedactPal: Quick Redact Compared"
 description: Snipping Tool's Quick redact hides emails and phone numbers. RedactPal also finds card numbers, IBANs and API keys. Free, nothing uploaded.
 h1: "Snipping Tool Finds Your Email. RedactPal Finds Your API Key Too."
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,7 @@ related:
   - redact-screenshot
   - hide-api-keys-in-screenshots
   - guides/best-free-redaction-tools
+  - guides/snagit-smart-redact-free-alternative
 faq_title: Snipping Tool vs RedactPal — questions
 faq:
   - q: Is Snipping Tool's text recognition local?
@@ -30,7 +31,7 @@ faq:
     a: Yes. Microsoft tracks it as CVE-2023-28303 and fixed it in Snipping Tool 11.2302.20.0. See the [Quick redact guide](/guides/snipping-tool-quick-redact-limits/) for the details and the save-as-new-file habit.
 ---
 
-**Snipping Tool's Quick redact covers email addresses and phone numbers, per Microsoft. RedactPal covers those and also card numbers, IBANs, bank account numbers and API keys, with solid boxes, for screenshots, PDFs and text. It is free, needs no account and runs in your browser, so nothing is uploaded. For anything sensitive, RedactPal is the recommendation.**
+**Snipping Tool's Quick redact covers email addresses and phone numbers, per Microsoft. [RedactPal](/redact-screenshot/) covers those and also card numbers, IBANs, bank account numbers and API keys, with solid boxes, for screenshots, PDFs and text. It is free, needs no account and runs in your browser, so nothing is uploaded. For anything sensitive, RedactPal is the recommendation.**
 
 ## Why Snipping Tool is so popular
 

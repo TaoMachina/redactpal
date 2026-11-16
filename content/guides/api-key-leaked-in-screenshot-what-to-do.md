@@ -3,7 +3,7 @@ title: "API Key Leaked in a Screenshot? What to Do Right Now"
 description: "Posted a screenshot showing an API key? Rotate it first, check usage logs, then delete the image. Steps and official links for AWS, GitHub, Stripe, more."
 h1: "API key leaked in a screenshot: what to do right now"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 cta:
   tool: hide-api-keys-in-screenshots
@@ -30,7 +30,7 @@ faq:
     a: "No. Blur and pixelation can be reversed in published research, and the original is probably still in the post's history. See [Can blurred text be unblurred?](/guides/can-blurred-text-be-unblurred/)."
 ---
 
-Treat the key as compromised. Deleting the post doesn't make it safe, because anyone who saw or saved the image can still read it. First revoke or rotate the key in the provider's dashboard, then update your apps, check the usage and billing logs for calls you didn't make, and only then delete the screenshot.
+Treat the key as compromised. Deleting the post doesn't make it safe, because anyone who saw or saved the image can still read it. First revoke or rotate the key in the provider's dashboard, then update your apps, check the usage and billing logs for calls you didn't make, and only then delete the screenshot. Next time, hide keys before you post: [RedactPal](/hide-api-keys-in-screenshots/) boxes them automatically, free, in your browser.
 
 This guide is general information, not legal or security-consulting advice. Provider pages change, so follow the linked official documentation for the exact buttons.
 
@@ -92,6 +92,8 @@ Deleting only removes what you control. Copies others saved, notifications and c
 <!-- cta -->
 
 ## Step 6: Stop it happening again
+
+![A fake chat screenshot showing an AWS access key, a Stripe secret key, a database IP address, an email, a card number and a phone number in plain text](img/redactpal-screenshot-with-secrets.png "The kind of screenshot that leaks: a fake .env snippet pasted in a chat (sample data only). Cover every value before you post it.")
 
 - **Redact before you share.** Make it a habit: screenshot, redact, then post.
 - **Prefer short-lived credentials.** AWS recommends temporary security credentials such as IAM roles over long-term access keys ([AWS](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)).

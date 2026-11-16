@@ -3,7 +3,7 @@ title: "Smallpdf Redact Alternative: Free, No Upload | RedactPal"
 description: Smallpdf's redact tool is polished, but files are processed on its servers and free use has limits. RedactPal is free, unlimited and never uploads.
 h1: "Smallpdf Redact Is Great — Until You Read the Upload and Limits Fine Print"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,7 @@ related:
   - guides/how-to-check-if-pdf-redaction-worked
   - guides/adobe-acrobat-redact-alternative
   - guides/pdf24-vs-redactpal
+  - guides/updf-redact-alternative
 faq_title: Smallpdf vs RedactPal — questions
 faq:
   - q: Is Smallpdf's Redact PDF tool free?
@@ -30,7 +31,7 @@ faq:
     a: Yes. It runs in a mobile browser, works offline after your first visit, and can be installed as an app.
 ---
 
-**Smallpdf Redact is a well-made tool, but it processes your PDF on Smallpdf's servers and limits free users. RedactPal is the better choice before you share a document: it is free with no limits, uploads nothing, needs no account, and detects card numbers, IBANs, account numbers and API keys automatically.**
+**Smallpdf Redact is a well-made tool, but it processes your PDF on Smallpdf's servers and limits free users. [RedactPal](/redact-pdf/) is the better choice before you share a document: it is free with no limits, uploads nothing, needs no account, and detects card numbers, IBANs, account numbers and API keys automatically.**
 
 ## Why Smallpdf is so popular
 

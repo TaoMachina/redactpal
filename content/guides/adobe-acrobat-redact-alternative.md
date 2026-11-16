@@ -3,7 +3,7 @@ title: "Acrobat Redact Alternative: Free, No Account | RedactPal"
 description: Acrobat Pro is the household name in PDF redaction, but Redact needs a paid Pro plan. RedactPal is free, open source and never uploads your file.
 h1: "Acrobat Pro Is the Name in PDF Redaction. To Share a File Safely, You Don't Need to Pay for It"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,7 @@ related:
   - guides/how-to-check-if-pdf-redaction-worked
   - guides/smallpdf-redact-alternative
   - guides/pdf24-vs-redactpal
+  - guides/updf-redact-alternative
 faq_title: Acrobat vs RedactPal — questions
 faq:
   - q: Is Redact included in Acrobat Standard?
@@ -30,7 +31,7 @@ faq:
     a: Yes. It runs in a mobile browser, works offline after the first visit and can be installed as an app.
 ---
 
-**Adobe Acrobat Pro's Redact tool is a proven professional option, but it requires a paid Pro plan. To redact a PDF before sharing it, RedactPal is the better pick: it is free with no account, never uploads your file, auto-detects card numbers, IBANs, account numbers and API keys, and removes the text under each box for good.**
+**Adobe Acrobat Pro's Redact tool is a proven professional option, but it requires a paid Pro plan. To redact a PDF before sharing it, [RedactPal](/redact-pdf/) is the better pick: it is free with no account, never uploads your file, auto-detects card numbers, IBANs, account numbers and API keys, and removes the text under each box for good.**
 
 ## Why Acrobat is the default
 

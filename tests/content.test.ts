@@ -246,12 +246,40 @@ describe('rendered pages', () => {
 
   it('writes valid JSON-LD that matches the visible FAQ', () => {
     const ld = ldBlocks(home);
-    expect(ld.map((x) => x['@type'])).toEqual(['WebApplication', 'Organization', 'FAQPage']);
+    expect(ld.map((x) => x['@type'])).toEqual(['WebApplication', 'Organization', 'WebSite', 'FAQPage']);
     expect(ld[0]).toMatchObject({ softwareVersion: '1.2.3', dateModified: '2026-11-01', sameAs: ['https://github.com/TaoMachina/redactpal'] });
-    const faq = ld[2] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
+    expect(ld[2]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': 'https://redactpal.com/#website',
+      name: 'RedactPal',
+      alternateName: ['Redact Pal', 'redactpal.com'],
+      url: 'https://redactpal.com/',
+      publisher: { '@id': 'https://redactpal.com/#org' },
+    });
+    const faq = ld[3] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
     expect(faq.mainEntity).toEqual([{ '@type': 'Question', name: 'Is it free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, free.' } }]);
     expect(home.match(/<details class="faq__item">/g)).toHaveLength(1);
-    expect(ldBlocks(pdf).map((x) => x['@type'])).toEqual(['WebPage', 'BreadcrumbList']);
+    expect(ldBlocks(pdf).map((x) => x['@type'])).toEqual(['WebPage', 'WebApplication', 'BreadcrumbList']);
+  });
+
+  it('gives landing pages their own WebApplication, a WebSite link and a visible byline', () => {
+    const [page, app] = ldBlocks(pdf);
+    expect(page).toMatchObject({ isPartOf: { '@id': 'https://redactpal.com/#website' } });
+    expect(app).toMatchObject({
+      '@id': 'https://redactpal.com/redact-pdf/#app',
+      url: 'https://redactpal.com/redact-pdf/',
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Any (web browser)',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      isAccessibleForFree: true,
+      author: { '@type': 'Person', name: 'Yuntao Zou', url: 'https://yuntaozou.com' },
+      publisher: { '@id': 'https://redactpal.com/#org' },
+      dateModified: '2026-11-10',
+    });
+    expect((app as { name: string }).name).toMatch(/^RedactPal – \S/);
+    expect(pdf).toContain('<p class="dateline dateline--page">Updated <time datetime="2026-11-10">10 November 2026</time> · By <a href="https://yuntaozou.com" rel="author">Yuntao Zou</a></p>');
+    expect(home).not.toContain('dateline--page');
   });
 
   it('renders guides as static articles with Article, BreadcrumbList, FAQPage and HowTo', () => {

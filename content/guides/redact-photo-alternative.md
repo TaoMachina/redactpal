@@ -3,7 +3,7 @@ title: "Redact.photo Alternative: Solid Boxes, Not Blur"
 description: Redact.photo blurs images in your browser. RedactPal covers text with solid boxes and finds emails, cards and API keys for you. Free, nothing uploaded.
 h1: "Why Blur-Based Redactors Like Redact.photo Aren't Enough"
 published: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-16
 draft: false
 toc: auto
 cta:
@@ -16,6 +16,7 @@ related:
   - redact-screenshot
   - hide-api-keys-in-screenshots
   - guides/best-free-redaction-tools
+  - guides/snagit-smart-redact-free-alternative
 faq_title: Redact.photo vs RedactPal — questions
 faq:
   - q: Does redact.photo upload my image?
@@ -30,7 +31,7 @@ faq:
     a: Yes. It is free with no limits, no account and no sign-up, and the code is MIT licensed on GitHub.
 ---
 
-**Redact.photo is a fast, free way to blur parts of an image in your browser, and it says nothing is uploaded. RedactPal is the better pick for anything sensitive: it covers text with solid boxes instead of blur, finds emails, card numbers, IBANs and API keys for you, and handles PDFs and text as well as images.**
+**Redact.photo is a fast, free way to blur parts of an image in your browser, and it says nothing is uploaded. [RedactPal](/redact-screenshot/) is the better pick for anything sensitive: it covers text with solid boxes instead of blur, finds emails, card numbers, IBANs and API keys for you, and handles PDFs and text as well as images.**
 
 ## Why redact.photo is popular
 
