@@ -169,3 +169,26 @@ for (const icon of ICONS) {
   writeFileSync(join(out, icon.file), png);
   console.log(`${icon.file}  ${icon.size}×${icon.size}  ${png.length} bytes`);
 }
+
+// favicon.ico at the site root: crawlers (Bing especially) fetch /favicon.ico directly, and Google
+// wants a favicon whose size is a multiple of 48 px. PNG-in-ICO entries, supported everywhere current.
+const icoSizes = [16, 32, 48];
+const pngs = icoSizes.map((size) => encodePng(rasterize(design({ tileRadius: 7 }), size), size));
+const header = Buffer.alloc(6 + 16 * pngs.length);
+header.writeUInt16LE(0, 0); // reserved
+header.writeUInt16LE(1, 2); // type: icon
+header.writeUInt16LE(pngs.length, 4);
+let offset = header.length;
+pngs.forEach((png, i) => {
+  const e = 6 + 16 * i;
+  header[e] = icoSizes[i]; // width
+  header[e + 1] = icoSizes[i]; // height
+  header.writeUInt16LE(1, e + 4); // colour planes
+  header.writeUInt16LE(32, e + 6); // bits per pixel
+  header.writeUInt32LE(png.length, e + 8);
+  header.writeUInt32LE(offset, e + 12);
+  offset += png.length;
+});
+const ico = Buffer.concat([header, ...pngs]);
+writeFileSync(join(root, 'public', 'favicon.ico'), ico);
+console.log(`favicon.ico  ${icoSizes.join('/')}  ${ico.length} bytes`);

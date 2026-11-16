@@ -253,7 +253,9 @@ function staticShell(o: { from: string; head: string; cssHref: string; body: str
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#E8ECF1" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0F1318" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="${relHref(o.from, '/favicon.ico')}" sizes="48x48" />
   <link rel="icon" href="${relHref(o.from, '/favicon.svg')}" type="image/svg+xml" />
+  <link rel="icon" href="${relHref(o.from, '/icons/icon-192.png')}" sizes="192x192" type="image/png" />
   <link rel="apple-touch-icon" href="${relHref(o.from, '/icons/apple-touch-icon.png')}" />
   <link rel="stylesheet" href="${relHref(o.from, o.cssHref)}" />
 </head>
