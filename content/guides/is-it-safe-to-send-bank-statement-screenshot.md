@@ -8,7 +8,7 @@ draft: false
 cta:
   tool: redact-bank-statement
   title: Hide the account number in 30 seconds
-  text: "[RedactPal](https://github.com/stefano2007517-star/redactpal) is free, open source (MIT) and needs no account. Paste the screenshot or drop the PDF. It boxes account and routing numbers, sort codes, IBANs, card numbers, emails and phone numbers, and you drag over anything else. Nothing is uploaded."
+  text: "[RedactPal](https://github.com/TaoMachina/redactpal) is free, open source (MIT) and needs no account. Paste the screenshot or drop the PDF. It boxes account and routing numbers, sort codes, IBANs, card numbers, emails and phone numbers, and you drag over anything else. Nothing is uploaded."
   button: Redact a bank statement
 related:
   - redact-bank-statement
@@ -98,7 +98,7 @@ A screenshot is easier to make and easier to get wrong. It can include notificat
 3. Drag a box over anything else: a name, an address, a merchant row.
 4. Press **Copy**, **Share** or **Download**. The file has solid black boxes, is re-encoded as PNG (no EXIF or GPS), and a PDF is rebuilt from pixels so the text under a box can't be copied out.
 
-Nothing leaves your device. You can check that in the [source code](https://github.com/stefano2007517-star/redactpal). If you redact a PDF, our guide on [how to check if a PDF redaction worked](/guides/how-to-check-if-pdf-redaction-worked/) shows how to confirm it. Please don't blur account numbers instead: blur can be reversed, as explained in [Can blurred text be unblurred?](/guides/can-blurred-text-be-unblurred/).
+Nothing leaves your device. You can check that in the [source code](https://github.com/TaoMachina/redactpal). If you redact a PDF, our guide on [how to check if a PDF redaction worked](/guides/how-to-check-if-pdf-redaction-worked/) shows how to confirm it. Please don't blur account numbers instead: blur can be reversed, as explained in [Can blurred text be unblurred?](/guides/can-blurred-text-be-unblurred/).
 
 ## Already sent it to a scammer?
 

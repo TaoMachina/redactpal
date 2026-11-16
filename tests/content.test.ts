@@ -247,7 +247,7 @@ describe('rendered pages', () => {
   it('writes valid JSON-LD that matches the visible FAQ', () => {
     const ld = ldBlocks(home);
     expect(ld.map((x) => x['@type'])).toEqual(['WebApplication', 'Organization', 'FAQPage']);
-    expect(ld[0]).toMatchObject({ softwareVersion: '1.2.3', dateModified: '2026-11-01', sameAs: ['https://github.com/stefano2007517-star/redactpal'] });
+    expect(ld[0]).toMatchObject({ softwareVersion: '1.2.3', dateModified: '2026-11-01', sameAs: ['https://github.com/TaoMachina/redactpal'] });
     const faq = ld[2] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
     expect(faq.mainEntity).toEqual([{ '@type': 'Question', name: 'Is it free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, free.' } }]);
     expect(home.match(/<details class="faq__item">/g)).toHaveLength(1);

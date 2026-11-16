@@ -8,7 +8,7 @@ draft: false
 cta:
   tool: redact-screenshot
   title: Cover it with a solid box instead
-  text: "[RedactPal](https://github.com/stefano2007517-star/redactpal) is free, open source (MIT) and needs no account. Paste a screenshot (Ctrl+V / ⌘V) and it boxes emails, card numbers, IBANs and API keys automatically. Drag once over a name to hide it everywhere. Nothing is uploaded."
+  text: "[RedactPal](https://github.com/TaoMachina/redactpal) is free, open source (MIT) and needs no account. Paste a screenshot (Ctrl+V / ⌘V) and it boxes emails, card numbers, IBANs and API keys automatically. Drag once over a name to hide it everywhere. Nothing is uploaded."
   button: Redact a screenshot
 related:
   - redact-screenshot
@@ -98,7 +98,7 @@ Plenty of everyday tools offer blur or pixelation as the redaction option. A rec
 
 <!-- cta -->
 
-RedactPal does all four. It only draws solid boxes, never blur or pixelation. Exports are re-encoded as PNG, so there is no EXIF or GPS data, and PDFs are rebuilt page by page from pixels. It runs in your browser with no upload, and the [source is on GitHub](https://github.com/stefano2007517-star/redactpal). The detector is rule-based: it finds emails, card numbers, IBANs and key formats such as `sk-proj-`, `ghp_` and `AKIA`, and you add anything else with one drag. Check the highlights before you copy.
+RedactPal does all four. It only draws solid boxes, never blur or pixelation. Exports are re-encoded as PNG, so there is no EXIF or GPS data, and PDFs are rebuilt page by page from pixels. It runs in your browser with no upload, and the [source is on GitHub](https://github.com/TaoMachina/redactpal). The detector is rule-based: it finds emails, card numbers, IBANs and key formats such as `sk-proj-`, `ghp_` and `AKIA`, and you add anything else with one drag. Check the highlights before you copy.
 
 If you have already posted a blurred secret, rotate it first. Our guide on an [API key leaked in a screenshot](/guides/api-key-leaked-in-screenshot-what-to-do/) has the steps. For a broader look at hiding keys, see [hide API keys in screenshots](/hide-api-keys-in-screenshots/).
 

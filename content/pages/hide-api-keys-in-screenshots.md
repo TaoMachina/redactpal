@@ -18,13 +18,13 @@ faq:
   - q: Does it detect keys in dark-mode terminals?
     a: "Yes. RedactPal reads light-on-dark text as well as dark-on-light. In our test of a dark-mode terminal at 12px, every key, token and password in the screenshot was found. The one habit worth keeping: capture at 100% zoom or more, and glance over the highlights before you copy."
   - q: Is the screenshot sent to a server for OCR?
-    a: No. The OCR engine (Tesseract) is served from the same site and runs in your browser. A Content-Security-Policy blocks connections to other servers. Read about it under "Why you can trust it" in the [README](https://github.com/stefano2007517-star/redactpal#why-you-can-trust-it).
+    a: No. The OCR engine (Tesseract) is served from the same site and runs in your browser. A Content-Security-Policy blocks connections to other servers. Read about it under "Why you can trust it" in the [README](https://github.com/TaoMachina/redactpal#why-you-can-trust-it).
   - q: Can I add my own secret patterns?
     a: Drag a box over any value once, such as an internal hostname or project codename, and RedactPal offers to hide it everywhere it appears in that image.
   - q: What about keys split across lines?
     a: RedactPal follows a key that wraps onto the next line and boxes the continuation too. Private key blocks are covered from the BEGIN line to the END line, including truncated ones.
   - q: Can my team host it?
-    a: Yes. RedactPal is a static site with no backend. The README explains [how to self-host it](https://github.com/stefano2007517-star/redactpal#self-hosting-companies).
+    a: Yes. RedactPal is a static site with no backend. The README explains [how to self-host it](https://github.com/TaoMachina/redactpal#self-hosting-companies).
 ---
 
 ## How to hide an API key in a screenshot
@@ -35,7 +35,7 @@ faq:
 
 ## Which keys and tokens does RedactPal detect?
 
-The list below comes from the detection rules in [`src/detect/rules.ts`](https://github.com/stefano2007517-star/redactpal/blob/main/src/detect/rules.ts). We ran a made-up or documented example of each provider below, plus JWTs, a private key block, a Bearer header, URL credentials and password and secret assignments, through the same detector the app uses (a throwaway test, not part of the repo). Every one was found.
+The list below comes from the detection rules in [`src/detect/rules.ts`](https://github.com/TaoMachina/redactpal/blob/main/src/detect/rules.ts). We ran a made-up or documented example of each provider below, plus JWTs, a private key block, a Bearer header, URL credentials and password and secret assignments, through the same detector the app uses (a throwaway test, not part of the repo). Every one was found.
 
 | Provider or type | Looks like | Notes |
 |---|---|---|

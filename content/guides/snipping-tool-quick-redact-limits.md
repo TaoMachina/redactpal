@@ -59,7 +59,7 @@ With Text actions on, [Pureinfotech describes](https://pureinfotech.com/hide-tex
 
 ## What Quick redact is documented to cover
 
-The scope is Microsoft's own: emails and phone numbers. That is a reasonable default for a quick tool, and it means other sensitive items need your attention. We could not run Snipping Tool ourselves for this guide, so the table compares the documented scope with what RedactPal detects, taken from its [detection rules](https://github.com/stefano2007517-star/redactpal/blob/main/src/detect/rules.ts).
+The scope is Microsoft's own: emails and phone numbers. That is a reasonable default for a quick tool, and it means other sensitive items need your attention. We could not run Snipping Tool ourselves for this guide, so the table compares the documented scope with what RedactPal detects, taken from its [detection rules](https://github.com/TaoMachina/redactpal/blob/main/src/detect/rules.ts).
 
 | Item in the screenshot | Quick redact (per Microsoft) | RedactPal detection |
 | --- | --- | --- |

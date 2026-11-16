@@ -27,7 +27,7 @@ faq:
   - q: Does it work for screenshots of chats such as WhatsApp or Slack?
     a: Yes. Phone numbers, emails and links with tokens are found in any screenshot. Contact names and message text have no fixed format, so drag a box over a name once and RedactPal offers to hide it everywhere it appears.
   - q: Is it really free?
-    a: Yes. RedactPal is MIT-licensed, and needs no account. The [source code is on GitHub](https://github.com/stefano2007517-star/redactpal).
+    a: Yes. RedactPal is MIT-licensed, and needs no account. The [source code is on GitHub](https://github.com/TaoMachina/redactpal).
 ---
 
 ## How to redact a screenshot
@@ -39,7 +39,7 @@ faq:
 
 ## What does RedactPal hide automatically?
 
-Detection is rule-based: known formats, checksums and key prefixes. It reads the text on your device with OCR, then matches it against these rules ([the full list is in `src/detect/rules.ts`](https://github.com/stefano2007517-star/redactpal/blob/main/src/detect/rules.ts)).
+Detection is rule-based: known formats, checksums and key prefixes. It reads the text on your device with OCR, then matches it against these rules ([the full list is in `src/detect/rules.ts`](https://github.com/TaoMachina/redactpal/blob/main/src/detect/rules.ts)).
 
 | Type | What it matches |
 |---|---|
@@ -65,7 +65,7 @@ Blurred and pixelated text can be reconstructed. Hill, Zhou, Saul and Shacham (P
 
 ## Is my screenshot uploaded?
 
-No. Text recognition (Tesseract) runs in your browser. The page ships with a Content-Security-Policy that blocks connections to other servers, and the code is open for anyone to check; see "Why you can trust it" in the [README](https://github.com/stefano2007517-star/redactpal#why-you-can-trust-it).
+No. Text recognition (Tesseract) runs in your browser. The page ships with a Content-Security-Policy that blocks connections to other servers, and the code is open for anyone to check; see "Why you can trust it" in the [README](https://github.com/TaoMachina/redactpal#why-you-can-trust-it).
 
 ## What is left in the file after redaction?
 

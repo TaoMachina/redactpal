@@ -50,7 +50,7 @@ With RedactPal it does not. The page loads once, and every step after that runs 
 
 Smallpdf's page says "there are some usage limits for free users" and offers Pro for unlimited redactions. The page does not publish the numbers there, so check the [Smallpdf pricing page](https://smallpdf.com/pricing) for current terms.
 
-RedactPal is free and unlimited. There is no account, no sign-up, no trial and no daily cap. It is MIT-licensed open source, so the code is public on [GitHub](https://github.com/stefano2007517-star/redactpal) and you can host your own copy as static files. It handles PDFs up to 200 pages, plus screenshots, photos and plain text.
+RedactPal is free and unlimited. There is no account, no sign-up, no trial and no daily cap. It is MIT-licensed open source, so the code is public on [GitHub](https://github.com/TaoMachina/redactpal) and you can host your own copy as static files. It handles PDFs up to 200 pages, plus screenshots, photos and plain text.
 
 ## Finding the sensitive parts
 

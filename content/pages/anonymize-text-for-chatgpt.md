@@ -21,7 +21,7 @@ faq:
   - q: What if the AI changes a placeholder, like [Email 1] or [email_1]?
     a: Restore accepts spacing, case and underscore variants. On 2026-11-15 we ran `[EMAIL 1]`, `[email_1]`, `[ Email_1 ]` and the markdown-escaped `\[EMAIL\_1\]` through RedactPal's restore code, and each one was swapped back for the original value. A placeholder the AI renames to something else, such as `[Customer email]`, is left as written.
   - q: Is my text uploaded?
-    a: No. Detection and restoring run in your browser, and the page is blocked from connecting to other servers. The [source is on GitHub](https://github.com/stefano2007517-star/redactpal), so you can check.
+    a: No. Detection and restoring run in your browser, and the page is blocked from connecting to other servers. The [source is on GitHub](https://github.com/TaoMachina/redactpal), so you can check.
   - q: Can I anonymize a screenshot instead?
     a: Yes. Paste or drop the image on the [screenshot tool](/redact-screenshot/). Detected values are covered with solid boxes, and you can drag over anything else.
   - q: Is it free?
@@ -54,7 +54,7 @@ Each detected value becomes a placeholder made of a label and a number. The same
 | `[IP_ADDRESS_1]` | IP addresses |
 | `[CUSTOM_1]` | Terms you add yourself |
 
-On 2026-11-15 we ran a fake complaint through the detector. It had a name added as a custom term, an email that appeared twice, a UK phone number, the published example IBAN `GB82 WEST 1234 5698 7654 32`, a `password:` line, an OpenAI-style key and an IP address. Each became its own placeholder, and the repeated email got `[EMAIL_1]` both times. The order number stayed as written, because it has no fixed format. The [detection rules](https://github.com/stefano2007517-star/redactpal/blob/main/src/detect/rules.ts) show exactly what is matched.
+On 2026-11-15 we ran a fake complaint through the detector. It had a name added as a custom term, an email that appeared twice, a UK phone number, the published example IBAN `GB82 WEST 1234 5698 7654 32`, a `password:` line, an OpenAI-style key and an IP address. Each became its own placeholder, and the repeated email got `[EMAIL_1]` both times. The order number stayed as written, because it has no fixed format. The [detection rules](https://github.com/TaoMachina/redactpal/blob/main/src/detect/rules.ts) show exactly what is matched.
 
 ### Names, client names and project codenames
 

@@ -103,7 +103,7 @@ For most documents this does not matter. It matters when the hidden item is shor
 
 ## How RedactPal approaches the four tests
 
-[RedactPal](/redact-pdf/) is free, MIT-licensed and needs no account. It runs in your browser and your file is never uploaded. When you export a PDF, it does not edit your file. It renders each page to pixels, draws solid boxes, and builds a brand-new PDF made only of page images. The [exporter's source](https://github.com/stefano2007517-star/redactpal/blob/main/src/pdf/flatten.ts) states that the original PDF is never loaded into the output document, and the only metadata it sets is a `Producer` entry.
+[RedactPal](/redact-pdf/) is free, MIT-licensed and needs no account. It runs in your browser and your file is never uploaded. When you export a PDF, it does not edit your file. It renders each page to pixels, draws solid boxes, and builds a brand-new PDF made only of page images. The [exporter's source](https://github.com/TaoMachina/redactpal/blob/main/src/pdf/flatten.ts) states that the original PDF is never loaded into the output document, and the only metadata it sets is a `Producer` entry.
 
 By design, that means:
 

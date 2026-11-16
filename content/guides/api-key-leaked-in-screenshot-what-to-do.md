@@ -8,7 +8,7 @@ draft: false
 cta:
   tool: hide-api-keys-in-screenshots
   title: Repost a safe version of the screenshot
-  text: "[RedactPal](https://github.com/stefano2007517-star/redactpal) is free, open source (MIT) and needs no account. It finds API keys, tokens, emails and card numbers in a pasted screenshot and covers them with solid boxes. Nothing is uploaded."
+  text: "[RedactPal](https://github.com/TaoMachina/redactpal) is free, open source (MIT) and needs no account. It finds API keys, tokens, emails and card numbers in a pasted screenshot and covers them with solid boxes. Nothing is uploaded."
   button: Hide API keys in a screenshot
 related:
   - hide-api-keys-in-screenshots
@@ -87,7 +87,7 @@ Now remove it, in this order, because the key is already dead:
 3. Delete your copy from AI chat history if you uploaded it there.
 4. Repost a redacted version if people need the context.
 
-Deleting only removes what you control. Copies others saved, notifications and caches can remain, which is why step 1 comes first. For the replacement, paste the screenshot into RedactPal. It recognizes the key formats defined in `src/detect/rules.ts` in the [open-source repository](https://github.com/stefano2007517-star/redactpal), such as AWS, GitHub, GitLab, Slack, Stripe, Anthropic, OpenAI, Google, SendGrid, npm, Hugging Face and Twilio, and covers them with solid boxes. You check the highlights, then copy the safe version.
+Deleting only removes what you control. Copies others saved, notifications and caches can remain, which is why step 1 comes first. For the replacement, paste the screenshot into RedactPal. It recognizes the key formats defined in `src/detect/rules.ts` in the [open-source repository](https://github.com/TaoMachina/redactpal), such as AWS, GitHub, GitLab, Slack, Stripe, Anthropic, OpenAI, Google, SendGrid, npm, Hugging Face and Twilio, and covers them with solid boxes. You check the highlights, then copy the safe version.
 
 <!-- cta -->
 

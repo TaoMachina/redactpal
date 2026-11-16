@@ -6,7 +6,7 @@ import { parse as parseYaml } from 'yaml';
 export const SITE = {
   origin: 'https://redactpal.com',
   name: 'RedactPal',
-  github: 'https://github.com/stefano2007517-star/redactpal',
+  github: 'https://github.com/TaoMachina/redactpal',
   ogImage: '/og.png',
   ogImageAlt: 'RedactPal: a document with an email, card number, phone number and API key blacked out',
 } as const;

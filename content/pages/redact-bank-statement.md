@@ -72,4 +72,4 @@ Open the downloaded PDF, press Ctrl+A / ⌘A, copy, and paste into a text editor
 
 Redacting hides information. Changing an amount, date or name alters the document, and that can be fraud. RedactPal only covers content with boxes. It never edits it.
 
-Open the [tool](/) any time, or read the [source on GitHub](https://github.com/stefano2007517-star/redactpal).
+Open the [tool](/) any time, or read the [source on GitHub](https://github.com/TaoMachina/redactpal).

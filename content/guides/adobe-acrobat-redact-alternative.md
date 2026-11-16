@@ -51,7 +51,7 @@ Adobe's comparison marks "Redact sensitive information" as not a feature of Stan
 
 That is reasonable for someone who redacts every week. It is a lot to pay to black out an IBAN on one bank statement.
 
-RedactPal is free and unlimited. There is no account, no sign-up and no trial to cancel. It is MIT-licensed open source, so the code is public on [GitHub](https://github.com/stefano2007517-star/redactpal), and you can self-host it as static files.
+RedactPal is free and unlimited. There is no account, no sign-up and no trial to cancel. It is MIT-licensed open source, so the code is public on [GitHub](https://github.com/TaoMachina/redactpal), and you can self-host it as static files.
 
 ## Where RedactPal is the better fit
 
