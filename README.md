@@ -1,6 +1,6 @@
 # RedactPal
 
-[![Open RedactPal](public/og.png)](https://redactpal.com)
+[![RedactPal demo: paste a screenshot, it finds the API keys, emails and card numbers and covers them with solid boxes, then copy the safe version](docs/demo.gif)](https://redactpal.com)
 
 **[redactpal.com](https://redactpal.com)** · Free · Open source (MIT) · Nothing is uploaded
 
