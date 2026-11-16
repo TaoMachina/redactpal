@@ -7,6 +7,7 @@ export const SITE = {
   origin: 'https://redactpal.com',
   name: 'RedactPal',
   github: 'https://github.com/TaoMachina/redactpal',
+  author: { name: 'Yuntao Zou', url: 'https://yuntaozou.com' },
   ogImage: '/og.png',
   ogImageAlt: 'RedactPal: a document with an email, card number, phone number and API key blacked out',
 } as const;

@@ -49,6 +49,8 @@ export function masthead(from: string, current?: 'guides'): string {
   );
 }
 
+const AUTHOR_LD = { '@type': 'Person', name: SITE.author.name, url: SITE.author.url };
+
 export function siteFooter(site: Site, from: string, updated: string): string {
   const link = (to: string, label: string) => `<li><a href="${escapeHtml(relHref(from, to))}">${escapeHtml(label)}</a></li>`;
   const tools = [site.home, ...site.pages].map((p) => link(p.url, p.navLabel)).join('');
@@ -56,7 +58,7 @@ export function siteFooter(site: Site, from: string, updated: string): string {
     `<footer class="site-foot"><nav class="site-foot__nav" aria-label="Footer">` +
     `<ul class="site-foot__links">${tools}</ul>` +
     `<ul class="site-foot__links">${link('/guides/', 'Guides')}<li><a href="${SITE.github}" rel="noopener">GitHub</a></li>${link('/llms.txt', 'llms.txt')}</ul>` +
-    `</nav><p class="site-foot__meta">Free and open source (MIT). Nothing you redact is uploaded. <span class="site-foot__date">Updated ${time(updated)}</span></p></footer>`
+    `</nav><p class="site-foot__meta">Free and open source (MIT). Nothing you redact is uploaded. Made by <a href="${SITE.author.url}" rel="author">${SITE.author.name}</a>. <span class="site-foot__date">Updated ${time(updated)}</span></p></footer>`
   );
 }
 
@@ -185,6 +187,7 @@ export function renderAppPage(template: string, site: Site, page: PageEntry, o: 
       isAccessibleForFree: true,
       license: 'https://opensource.org/licenses/MIT',
       sameAs: [SITE.github],
+      author: AUTHOR_LD,
       publisher: { '@id': `${SITE.origin}/#org` },
     });
     ld.push({
@@ -195,6 +198,7 @@ export function renderAppPage(template: string, site: Site, page: PageEntry, o: 
       url: `${SITE.origin}/`,
       logo: absoluteUrl('/icons/icon-512.png'),
       sameAs: [SITE.github],
+      founder: AUTHOR_LD,
     });
   } else {
     ld.push({
@@ -327,7 +331,7 @@ export function renderGuide(site: Site, g: GuideEntry, o: StaticRenderOpts): str
       url: canonical,
       image: [img.url],
       inLanguage: 'en',
-      author: { '@type': 'Organization', name: SITE.name, url: `${SITE.origin}/` },
+      author: AUTHOR_LD,
       publisher: { '@type': 'Organization', name: SITE.name, url: `${SITE.origin}/`, logo: { '@type': 'ImageObject', url: absoluteUrl('/icons/icon-512.png') } },
     },
     breadcrumbJsonLd([
